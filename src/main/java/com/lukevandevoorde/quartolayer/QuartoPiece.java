@@ -1,4 +1,4 @@
-package com.lukevandevoorde;
+package com.lukevandevoorde.quartolayer;
 
 public interface QuartoPiece {
 
@@ -6,4 +6,5 @@ public interface QuartoPiece {
     public boolean getLight();
     public boolean getSquare();
     public boolean getFilled();
+    
 }

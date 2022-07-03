@@ -5,6 +5,14 @@ import processing.core.PGraphics;
 import processing.core.PVector;
 import processing.event.MouseEvent;
 import java.util.HashSet;
+import com.lukevandevoorde.classes.AnimatedDrawable;
+import com.lukevandevoorde.classes.BoardDrawable;
+import com.lukevandevoorde.classes.PieceBank;
+import com.lukevandevoorde.classes.TransformData;
+import com.lukevandevoorde.classes.Viewport;
+import com.lukevandevoorde.interfaces.Draggable;
+import com.lukevandevoorde.interfaces.MouseCoordinator;
+import com.lukevandevoorde.interfaces.TimeKeeper;
 
 public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
@@ -16,8 +24,8 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     private PieceBank leftPieceBank, rightPieceBank;
     private TransformData userView, selectView;
 
-    private HashSet<Draggable> draggables;
-    private Draggable selectedDraggable;
+    private HashSet<Draggable<?>> draggables;
+    private Draggable<?> selectedDraggable;
     private boolean dragging;
 
     public static void main(String[] args) {
@@ -28,7 +36,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         TIME_KEEPER = this;
         MOUSE_COORDINATOR = this;
         dragging = false;
-        draggables = new HashSet<Draggable>();
+        draggables = new HashSet<Draggable<?>>();
     }
 
     public void settings() {
@@ -97,12 +105,12 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     }
 
     @Override
-    public void add(Draggable draggable) {
+    public void add(Draggable<?> draggable) {
         draggables.add(draggable);
     }
 
     @Override
-    public void remove(Draggable draggable) {
+    public void remove(Draggable<?> draggable) {
         draggables.remove(draggable);
     }
 
@@ -125,7 +133,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
     @Override
     public void mousePressed() {
-        for (Draggable d: draggables) {
+        for (Draggable<?> d: draggables) {
             if (d.mouseHover(mouseX, mouseY)) {
                 dragging = true;
                 selectedDraggable = d;

@@ -1,12 +1,14 @@
-package com.lukevandevoorde;
+package com.lukevandevoorde.classes;
 
 import java.util.Set;
-import java.util.ArrayList;
-import java.util.HashSet;
 
+import java.util.ArrayList;
+// import java.util.HashSet;
 import processing.core.PApplet;
 import processing.core.PVector;
-
+import com.lukevandevoorde.interfaces.DragTarget;
+import com.lukevandevoorde.interfaces.Draggable;
+import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 // public class PieceBank extends Drawable {
 

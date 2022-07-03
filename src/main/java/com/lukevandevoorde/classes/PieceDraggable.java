@@ -1,7 +1,11 @@
-package com.lukevandevoorde;
+package com.lukevandevoorde.classes;
 
 import processing.core.PVector;
 import java.util.HashSet;
+import com.lukevandevoorde.Main;
+import com.lukevandevoorde.interfaces.DragTarget;
+import com.lukevandevoorde.interfaces.Draggable;
+import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
 

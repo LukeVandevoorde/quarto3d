@@ -1,8 +1,9 @@
-package com.lukevandevoorde;
+package com.lukevandevoorde.classes;
 
 import processing.core.PGraphics;
 import processing.core.PApplet;
 import processing.core.PVector;
+import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class PieceDrawable extends Drawable {
 

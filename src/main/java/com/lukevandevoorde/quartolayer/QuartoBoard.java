@@ -1,4 +1,4 @@
-package com.lukevandevoorde;
+package com.lukevandevoorde.quartolayer;
 
 import java.util.Set;
 
@@ -15,4 +15,5 @@ public interface QuartoBoard {
     
     // puts quartoPiece down on the board and returns true, or returns false if (x, y) is occupied
     public boolean placePiece(int x, int y, QuartoPiece quartoPiece);
+
 }

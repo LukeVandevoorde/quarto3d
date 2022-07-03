@@ -1,4 +1,4 @@
-package com.lukevandevoorde;
+package com.lukevandevoorde.interfaces;
 
 public interface MouseInteractable {
     

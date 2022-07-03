@@ -1,9 +1,9 @@
-package com.lukevandevoorde;
+package com.lukevandevoorde.interfaces;
 
 public interface Draggable<T> extends MouseInteractable {
 
     public interface CallBack {
-        default void onStartDrag() { }
+        default void onStartDrag() {}
         default void onReject() {}
         default void onAccept() {}
     }

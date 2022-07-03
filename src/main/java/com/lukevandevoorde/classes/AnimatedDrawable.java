@@ -1,6 +1,7 @@
-package com.lukevandevoorde;
+package com.lukevandevoorde.classes;
 
 import processing.core.PVector;
+import com.lukevandevoorde.Main;
 
 public class AnimatedDrawable extends Drawable {
     private Drawable drawable;

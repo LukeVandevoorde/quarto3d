@@ -2,6 +2,8 @@ package com.lukevandevoorde;
 
 import java.util.HashSet;
 import java.util.Set;
+import com.lukevandevoorde.quartolayer.QuartoBoard;
+import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class Board implements QuartoBoard {
 

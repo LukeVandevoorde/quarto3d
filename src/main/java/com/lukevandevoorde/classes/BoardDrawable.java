@@ -1,7 +1,11 @@
-package com.lukevandevoorde;
+package com.lukevandevoorde.classes;
 
 import processing.core.PGraphics;
 import processing.core.PVector;
+import com.lukevandevoorde.interfaces.DragTarget;
+import com.lukevandevoorde.interfaces.Draggable;
+import com.lukevandevoorde.quartolayer.QuartoBoard;
+import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
     

@@ -1,5 +1,7 @@
 package com.lukevandevoorde;
 
+import com.lukevandevoorde.quartolayer.QuartoPiece;
+
 public class Piece implements QuartoPiece {
 
     private boolean tall, light, square, filled;
