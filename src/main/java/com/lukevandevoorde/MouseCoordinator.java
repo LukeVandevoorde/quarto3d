@@ -1,3 +1,5 @@
+package com.lukevandevoorde;
+
 public interface MouseCoordinator {
 
     public void add(Draggable draggable);

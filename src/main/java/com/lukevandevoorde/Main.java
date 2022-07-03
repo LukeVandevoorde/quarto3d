@@ -1,3 +1,5 @@
+package com.lukevandevoorde;
+
 import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.core.PVector;
@@ -19,7 +21,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     private boolean dragging;
 
     public static void main(String[] args) {
-        PApplet.main("Main");
+        PApplet.main("com.lukevandevoorde.Main");
     }
 
     public Main() {

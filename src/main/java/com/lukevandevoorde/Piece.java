@@ -1,3 +1,4 @@
+package com.lukevandevoorde;
 
 public class Piece implements QuartoPiece {
 

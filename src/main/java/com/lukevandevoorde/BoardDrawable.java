@@ -1,3 +1,5 @@
+package com.lukevandevoorde;
+
 import processing.core.PGraphics;
 import processing.core.PVector;
 
@@ -150,7 +152,8 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
                 if (lastIndex == 4*i+j) {
                     graphics.fill(25, 240, 30);
                 }
-                graphics.circle(0, 0, 1.5f*pieceWidth);
+                // graphics.circle(0, 0, 1.5f*pieceWidth);
+                graphics.ellipse(0, 0, 1.5f*pieceWidth, 1.5f*pieceWidth);
                 if (quartoBoard.pieceAt(i, j)) {
                     if (pieces[4*i + j] == null) {
                         pieces[4*i + j] = new PieceDrawable(viewport, TransformData.ZERO_TRANSFORM,

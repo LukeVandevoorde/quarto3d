@@ -1,3 +1,5 @@
+package com.lukevandevoorde;
+
 public interface QuartoPiece {
 
     public boolean getTall();

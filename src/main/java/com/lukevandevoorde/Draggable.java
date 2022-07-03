@@ -1,3 +1,5 @@
+package com.lukevandevoorde;
+
 public interface Draggable<T> extends MouseInteractable {
 
     public interface CallBack {

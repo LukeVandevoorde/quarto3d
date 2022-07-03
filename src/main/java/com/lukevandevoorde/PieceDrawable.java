@@ -1,3 +1,5 @@
+package com.lukevandevoorde;
+
 import processing.core.PGraphics;
 import processing.core.PApplet;
 import processing.core.PVector;
@@ -191,17 +193,22 @@ public class PieceDrawable extends Drawable {
                 graphics.translate(0, 0, pitDepth);
             } else {
                 graphics.translate(0, 0, pieceHeight);
-                graphics.circle(0, 0, 2*radius); 
+                // graphics.circle(0, 0, 2*radius); 
+                graphics.ellipse(0, 0, 2*radius, 2*radius);
             }
             graphics.noFill();
             graphics.stroke(0);
-            graphics.circle(0, 0, radius*2);
+            // graphics.circle(0, 0, radius*2);
+            graphics.ellipse(0, 0, 2*radius, 2*radius);
             graphics.translate(0, 0, -pieceHeight+grooveHeightHigh);
-            graphics.circle(0, 0, radius*2);
+            // graphics.circle(0, 0, radius*2);
+            graphics.ellipse(0, 0, 2*radius, 2*radius);
             graphics.translate(0, 0, -grooveHeightHigh+grooveHeightLow);
-            graphics.circle(0, 0, radius*2);
+            // graphics.circle(0, 0, radius*2);
+            graphics.ellipse(0, 0, 2*radius, 2*radius);
             graphics.translate(0, 0, -grooveHeightLow);
-            graphics.circle(0, 0, radius*2);
+            // graphics.circle(0, 0, radius*2);
+            graphics.ellipse(0, 0, 2*radius, 2*radius);
         }
         
         graphics.popMatrix();
@@ -222,10 +229,12 @@ public class PieceDrawable extends Drawable {
         drawer.endShape();
         drawer.stroke(0);
         drawer.strokeWeight(1);
-        drawer.circle(0, 0, 2*radius);
+        // drawer.circle(0, 0, 2*radius);
+        drawer.ellipse(0, 0, 2*radius, 2*radius);
         drawer.noFill();
         drawer.translate(0, 0, depth);
-        drawer.circle(0, 0, 2*radius);
+        // drawer.circle(0, 0, 2*radius);
+        drawer.ellipse(0, 0, 2*radius, 2*radius);
         drawer.popMatrix();
     }
 }

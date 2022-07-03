@@ -1,3 +1,5 @@
+package com.lukevandevoorde;
+
 import processing.core.PVector;
 import java.util.HashSet;
 
