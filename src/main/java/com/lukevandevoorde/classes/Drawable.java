@@ -5,13 +5,15 @@ import processing.core.PVector;
 public abstract class Drawable {
 
     protected Viewport viewport;
-    protected TransformData transform;
-    protected PVector dimensions;
+    protected final TransformData transform;
+    protected final PVector dimensions;
 
     public Drawable(Viewport viewport, TransformData transform, PVector dimensions) {
         this.viewport = viewport;
-        this.transform = transform;
-        this.dimensions = dimensions;
+        // this.transform = transform;
+        this.transform = new TransformData(transform);
+        // this.dimensions = dimensions;
+        this.dimensions = new PVector(dimensions.x, dimensions.y, dimensions.z);
     }
 
     public abstract void draw();
@@ -21,7 +23,12 @@ public abstract class Drawable {
     }
 
     public void setTransform(TransformData transformData) {
-        this.transform = transformData;
+        transform.setX(transformData.getX());
+        transform.setY(transformData.getY());
+        transform.setZ(transformData.getZ());
+        transform.setRotX(transformData.getRotX());
+        transform.setRotY(transformData.getRotY());
+        transform.setRotZ(transformData.getRotZ());
     }
 
     public abstract void setDimensions(PVector newDimensions);

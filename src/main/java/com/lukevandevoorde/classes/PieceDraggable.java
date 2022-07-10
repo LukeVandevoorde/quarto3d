@@ -27,7 +27,8 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
 
     @Override
     public void setTransform(TransformData newTransform) {
-        this.transform = newTransform;
+        this.transform.set(newTransform);
+        // this.transform = newTransform;
         // animatedPiece.setTransform(newTransform);
     }
 

@@ -5,7 +5,7 @@ import processing.core.PVector;
 
 public class TransformData {
 
-    public static final TransformData ZERO_TRANSFORM = new TransformData();
+    // public static final TransformData ZERO_TRANSFORM = new TransformData();
 
     private PVector position;
     private PVector rotation;
@@ -24,8 +24,24 @@ public class TransformData {
         this.rotation = new PVector(rx, ry, rz);
     }
 
-    public static TransformData lerp(TransformData start, TransformData end, float amt) {
-        return new TransformData(PVector.lerp(start.position, end.position, amt), PVector.lerp(start.rotation, end.rotation, amt));
+    public TransformData(TransformData other) {
+        this.position = new PVector(other.position.x, other.position.y, other.position.z);
+        this.rotation = new PVector(other.rotation.x, other.rotation.y, other.rotation.z);
+    }
+
+    // Set target to be the linear interpolation of start and end, by ratio amt
+    public static void doLerp(TransformData target, TransformData start, TransformData end, float amt) {
+        target.setX(amt*(end.getX() - start.getX()) + start.getX());
+        target.setY(amt*(end.getY() - start.getY()) + start.getY());
+        target.setZ(amt*(end.getZ() - start.getZ()) + start.getZ());
+        target.setRotX(amt*(end.getRotX() - start.getRotX()) + start.getRotX());
+        target.setRotY(amt*(end.getRotY() - start.getRotY()) + start.getRotY());
+        target.setRotZ(amt*(end.getRotZ() - start.getRotZ()) + start.getRotZ());
+    }
+
+    @Override
+    public String toString() {
+        return "[(" + getX() + ", " + getY() + ", " + getZ() + "), (" + getRotX() + ", " + getRotY() + ", " + getRotZ() + ")]";
     }
 
     // First, translates pg to position then does the rotation that is equivalent to
@@ -38,6 +54,11 @@ public class TransformData {
         pg.rotateY(rotation.y);
         pg.rotateX(-rotation.x);
         pg.rotateZ(-rotation.z);
+    }
+
+    public void set(TransformData other) {
+        this.position.set(other.position);
+        this.rotation.set(other.rotation);
     }
 
     public PVector getPosition() {

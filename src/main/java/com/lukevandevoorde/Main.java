@@ -50,28 +50,24 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/6), new PVector(0, 0, 0));
         // selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, 0), new PVector(0, 0, 0));
 
-        BoardDrawable qb = new BoardDrawable(boardViewport, userView, BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()), new Board());
+        BoardDrawable qb = new BoardDrawable(boardViewport, selectView, BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()), new Board());
         quartoBoard = new AnimatedDrawable(qb);
-        quartoBoard.animate(selectView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 3500);
-        quartoBoard.reverse();
+        quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 3500);
 
         Draggable.CallBack callBack = new Draggable.CallBack() {
             public void onStartDrag() {
-                if (userView.getRotZ() < 0) {
+                while (userView.getRotZ() < 0) {
                     userView.setRotZ(userView.getRotZ() + 2*PI);
                 }
                 selectView.setRotZ(((int)((userView.getRotZ()) / (PI/2) + 0.5f)) * PI / 2);
-                // quartoBoard.reverse();
                 quartoBoard.animate(selectView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
 
             public void onReject() {
-                // quartoBoard.reverse();
                 quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
 
             public void onAccept() {
-                // quartoBoard.reverse();
                 quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
         };
@@ -165,7 +161,6 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
             PVector drag = new PVector(mouseX - pmouseX, mouseY - pmouseY);
 
             userView.setRotX(min(0, max(userView.getRotX() + 0.01f*(this.mouseY - this.pmouseY), -PI/2)));
-
             userView.setRotZ((userView.getRotZ() + (0.01f) * drag.cross(arm).z / arm.mag()) % (2*PI));
         }
     }

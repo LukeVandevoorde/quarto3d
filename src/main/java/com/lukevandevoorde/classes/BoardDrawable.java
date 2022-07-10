@@ -27,7 +27,7 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 if (quartoBoard.pieceAt(i, j)) {
-                    pieces[4*i+j] = new PieceDrawable(viewport, TransformData.ZERO_TRANSFORM,
+                    pieces[4*i+j] = new PieceDrawable(viewport, new TransformData(),
                         new PVector(pieceWidth, pieceWidth, dimensions.z),
                         quartoBoard.getPiece(i, j));
                 }
@@ -52,7 +52,6 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
         lastIndex = -1;
         return accepted;
     }
-
     
     @Override
     public boolean mouseHover(int mouseX, int mouseY) {
@@ -160,7 +159,7 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
                 graphics.ellipse(0, 0, 1.5f*pieceWidth, 1.5f*pieceWidth);
                 if (quartoBoard.pieceAt(i, j)) {
                     if (pieces[4*i + j] == null) {
-                        pieces[4*i + j] = new PieceDrawable(viewport, TransformData.ZERO_TRANSFORM,
+                        pieces[4*i + j] = new PieceDrawable(viewport, new TransformData(),
                                                             new PVector(pieceWidth, pieceWidth, dimensions.z),
                                                             quartoBoard.getPiece(i, j));
                     }
