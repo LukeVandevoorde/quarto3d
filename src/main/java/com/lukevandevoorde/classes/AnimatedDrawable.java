@@ -14,12 +14,12 @@ public class AnimatedDrawable extends Drawable {
 
     @Override
     public void setDimensions(PVector newDimensions) {
-        animationManager.flushAndSetBase(null, newDimensions);
+        animationManager.flushSetDimensions(newDimensions);
     }
 
     @Override
     public void setTransform(TransformData newTransform) {
-        animationManager.flushAndSetBase(newTransform, null);
+        animationManager.flushSetTransform(newTransform);
     }
 
     @Override

@@ -52,7 +52,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
         BoardDrawable qb = new BoardDrawable(boardViewport, selectView, BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()), new Board());
         quartoBoard = new AnimatedDrawable(qb);
-        quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 3500);
+        quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 1500);
 
         Draggable.CallBack callBack = new Draggable.CallBack() {
             public void onStartDrag() {
@@ -60,14 +60,17 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
                     userView.setRotZ(userView.getRotZ() + 2*PI);
                 }
                 selectView.setRotZ(((int)((userView.getRotZ()) / (PI/2) + 0.5f)) * PI / 2);
+                quartoBoard.skipAnimation();
                 quartoBoard.animate(selectView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
 
             public void onReject() {
+                quartoBoard.skipAnimation();
                 quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
 
             public void onAccept() {
+                quartoBoard.skipAnimation();
                 quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
         };

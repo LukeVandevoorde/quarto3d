@@ -3,23 +3,11 @@ package com.lukevandevoorde.classes;
 import java.util.Set;
 
 import java.util.ArrayList;
-// import java.util.HashSet;
 import processing.core.PApplet;
 import processing.core.PVector;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
-
-// public class PieceBank extends Drawable {
-
-//     private static final floatPIECE_PROPORTION_MIN = 0.1f, PIECE_PROPORTION_MAX = 0.4f;
-
-//     private HashSet<PieceDraggable> drags;
-    
-//     public PieceBank(Viewport viewport, )
-// }
-
-
 
 public class PieceBank extends Drawable {
     private static final float PIECE_PROPORTION = 0.4f;
@@ -66,7 +54,6 @@ public class PieceBank extends Drawable {
     @Override
     public void draw() {
         viewport.getGraphics().pushMatrix();
-        // transform.transform(viewport.getGraphics()); // just added transform to the pieces instead
         for (PieceDraggable piece: drags) {
             piece.draw();
         }

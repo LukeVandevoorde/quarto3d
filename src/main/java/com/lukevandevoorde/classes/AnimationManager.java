@@ -43,22 +43,23 @@ public class AnimationManager {
     // Skips through all the animations and sets transform and dimensions to those found in the last step
     public void flush() {
         if (!animating) return;
-
+        animating = false;
         baseTransform = transformSequence.getLast();
         transformSequence.clear();
         baseDimensions = dimensionSequence.getLast();
         dimensionSequence.clear();
 
-        animating = false;
+        durations.clear();;
     }
 
-    // Skips through all the animations and sets transform and dimensions to those passed in. If none are passed in, then the last transform/dim are used
-    public void flushAndSetBase(TransformData transform, PVector dimensions) {
-        baseTransform = (transform == null) ? transformSequence.getLast() : transform;
-        baseDimensions = (dimensions == null) ? dimensionSequence.getLast() : dimensions;
-        transformSequence.clear();
-        dimensionSequence.clear();
-        durations.clear();
+    public void flushSetTransform(TransformData transform) {
+        flush();
+        baseTransform = transform;
+    }
+
+    public void flushSetDimensions(PVector dimensions) {
+        flush();
+        baseDimensions = dimensions;
     }
 
     // If animating, returns the linearly interpolated transform based on the time through the current remaining animation steps.

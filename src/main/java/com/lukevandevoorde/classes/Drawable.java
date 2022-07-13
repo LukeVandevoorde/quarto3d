@@ -10,18 +10,18 @@ public abstract class Drawable {
 
     public Drawable(Viewport viewport, TransformData transform, PVector dimensions) {
         this.viewport = viewport;
-        // this.transform = transform;
         this.transform = new TransformData(transform);
-        // this.dimensions = dimensions;
         this.dimensions = new PVector(dimensions.x, dimensions.y, dimensions.z);
     }
 
     public abstract void draw();
 
+    public abstract void setDimensions(PVector newDimensions);
+
     public void setViewport(Viewport viewport) {
         this.viewport = viewport;
     }
-
+    
     public void setTransform(TransformData transformData) {
         transform.setX(transformData.getX());
         transform.setY(transformData.getY());
@@ -30,8 +30,6 @@ public abstract class Drawable {
         transform.setRotY(transformData.getRotY());
         transform.setRotZ(transformData.getRotZ());
     }
-
-    public abstract void setDimensions(PVector newDimensions);
 
     public float getWidth() {
         return dimensions.x;

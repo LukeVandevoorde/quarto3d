@@ -56,11 +56,6 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
     @Override
     public boolean mouseHover(int mouseX, int mouseY) {
         PVector m = viewport.getLocalPoint(new PVector(mouseX, mouseY));
-        // m.x -= transform.getX();
-        // m.y -= transform.getY();
-        // m.rotate(transform.getRotZ());
-        // m.x += transform.getX();
-        // m.y += transform.getY();
         PVector testPoint = new PVector();
         viewport.getGraphics().pushMatrix();
         transform.transform(viewport.getGraphics());
@@ -84,34 +79,6 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
         viewport.getGraphics().popMatrix();
         return false;
     }
-
-    /*
-    @Override
-    public boolean mouseHover(int mouseX, int mouseY) {
-        PVector m = viewport.getLocalPoint(new PVector(mouseX, mouseY));
-        m.x -= transform.getX();
-        m.y -= transform.getY();
-        m.rotate(transform.getRotZ());
-        float scale = viewport.getScale(transform.getZ());
-        PVector testPoint = new PVector(-boardWidth/2 + edgePadding + pieceWidth/2, -boardWidth/2 + edgePadding + pieceWidth/2);
-        testPoint.x *= scale;
-        testPoint.y *= scale;
-
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                if (this.pieces[4*i+j] == null && m.dist(testPoint) <= scale*1.5f*pieceWidth/2) {
-                    lastIndex = 4*i+j;
-                    return true;
-                }
-                testPoint.x += scale * (pieceWidth + interiorPadding);
-            }
-            testPoint.x -= scale*4*(pieceWidth + interiorPadding);
-            testPoint.y += scale*(pieceWidth + interiorPadding);
-            // viewport.getGraphics().translate(4*(pieceWidth + interiorPadding), pieceWidth + interiorPadding);
-        }
-        lastIndex = -1;
-        return false;
-    }*/
 
     @Override
     public void setDimensions(PVector newDimensions) {
@@ -140,22 +107,16 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
 
         graphics.noFill();
         graphics.stroke(0);
-        // graphics.rect(-boardWidth/2, -boardWidth/2, boardWidth, boardWidth);
-
         graphics.fill(23);
         graphics.rect(-dimensions.x/2, -dimensions.x/2, dimensions.x, dimensions.y);
+        graphics.translate(edgePadding + pieceWidth/2 - dimensions.x/2, edgePadding + pieceWidth/2 - dimensions.x/2, 1);
         
-        graphics.translate(-dimensions.x/2, -dimensions.x/2, 1);
-
-        // graphics.translate(pieceBuffer + pieceCenterGap/2, pieceBuffer + pieceCenterGap/2, 0);
-        graphics.translate(edgePadding + pieceWidth/2, edgePadding + pieceWidth/2, 0);
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 graphics.fill(120, 110, 100);
                 if (lastIndex == 4*i+j) {
                     graphics.fill(25, 240, 30);
                 }
-                // graphics.circle(0, 0, 1.5f*pieceWidth);
                 graphics.ellipse(0, 0, 1.5f*pieceWidth, 1.5f*pieceWidth);
                 if (quartoBoard.pieceAt(i, j)) {
                     if (pieces[4*i + j] == null) {
