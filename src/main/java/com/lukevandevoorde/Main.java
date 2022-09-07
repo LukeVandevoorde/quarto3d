@@ -56,20 +56,23 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
         Draggable.CallBack callBack = new Draggable.CallBack() {
             public void onStartDrag() {
-                while (userView.getRotZ() < 0) {
-                    userView.setRotZ(userView.getRotZ() + 2*PI);
+                if (userView.getRotZ() < 0) {
+                    userView.setRotZ(userView.getRotZ() % (2*PI));
                 }
                 selectView.setRotZ(((int)((userView.getRotZ()) / (PI/2) + 0.5f)) * PI / 2);
+                quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
                 quartoBoard.skipAnimation();
                 quartoBoard.animate(selectView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
 
             public void onReject() {
+                quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
                 quartoBoard.skipAnimation();
                 quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
 
             public void onAccept() {
+                quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
                 quartoBoard.skipAnimation();
                 quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }

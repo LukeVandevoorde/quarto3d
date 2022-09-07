@@ -117,6 +117,7 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
                 c.onReject();
             }
         }
+        animatedPiece.animate(animatedPiece.getCurrentTransform(), animatedPiece.getCurrentDimensions(), 0);
         animatedPiece.skipAnimation();
         animatedPiece.animate(pieceRotationViewData, dimensions, 350);
         positionManager.enqueueAnimation(baseViewPosition, dimensions, 350);

@@ -44,6 +44,15 @@ public class AnimatedDrawable extends Drawable {
         return drawable.getDepth();
     }
 
+    public TransformData getCurrentTransform() {
+        return new TransformData(animationManager.currentTransform());
+    }
+
+    public PVector getCurrentDimensions() {
+        PVector curr = animationManager.currentDimensions();
+        return new PVector(curr.x, curr.y, curr.z);
+    }
+
     public void animate(TransformData t, PVector d, int millisDuration) {
         animationManager.enqueueAnimation(t, d, millisDuration);
     }
