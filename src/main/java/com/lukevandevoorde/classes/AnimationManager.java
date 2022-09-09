@@ -49,7 +49,7 @@ public class AnimationManager {
         baseDimensions = dimensionSequence.getLast();
         dimensionSequence.clear();
 
-        durations.clear();;
+        durations.clear();
     }
 
     public void flushSetTransform(TransformData transform) {

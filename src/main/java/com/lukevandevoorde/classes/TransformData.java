@@ -5,8 +5,6 @@ import processing.core.PVector;
 
 public class TransformData {
 
-    // public static final TransformData ZERO_TRANSFORM = new TransformData();
-
     private PVector position;
     private PVector rotation;
 

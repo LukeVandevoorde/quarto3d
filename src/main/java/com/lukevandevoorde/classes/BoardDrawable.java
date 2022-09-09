@@ -16,7 +16,7 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
     private PieceDrawable[] pieces;
     private float pieceWidth, interiorPadding, edgePadding;
 
-    // a little hacky
+    // used to id spot under hovering PieceDraggable for highlighting
     private int lastIndex;
 
     public BoardDrawable(Viewport viewport, TransformData transform, PVector dimensions, QuartoBoard quartoBoard) {
@@ -87,8 +87,6 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
         this.pieceWidth = dimensions.x * PIECE_WIDTH_PROPORTION;
         this.interiorPadding = dimensions.x * (1 - 4 * PIECE_WIDTH_PROPORTION) / (3 + 2 * EDGE_PADDING_BIAS);
         this.edgePadding = interiorPadding * EDGE_PADDING_BIAS;
-        // this.pieceSpacing = boardWidth * PIECE_SPACING_PROPORTION;
-        // this.edgeSpacing = boardWidth * (1 - 3 * PIECE_SPACING_PROPORTION) / 2;
 
         for (int i = 0; i < 16; i++) {
             if (pieces[i] != null) {

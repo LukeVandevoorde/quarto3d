@@ -17,12 +17,6 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
     private AnimatedDrawable animatedPiece;
     private AnimationManager positionManager;
 
-    // States
-    // Inactive in PieceBank                        Use AnimatedDrawable coords 
-    // Dragging - animation start                   Use this.transform
-    // Dragging - animation complete                Use this.transform
-    // Drag ended - animating back to PieceBank     Use AnimatedDrawable coords
-
     public PieceDraggable(Viewport graphics, TransformData transform, PVector dimensions, QuartoPiece piece) {
         super(graphics, new TransformData(transform.getPosition(), new PVector()), dimensions);
         this.piece = piece;
