@@ -15,7 +15,7 @@ public class PieceBank extends Drawable {
     private ArrayList<PieceDraggable> drags;
     private float baseWidth;
 
-    public PieceBank(Viewport viewport, TransformData transform, PVector dimensions, Set<QuartoPiece> pieces, boolean filterLight,
+    public PieceBank(Viewport viewport, TransformData transform, PVector dimensions, Set<QuartoPiece> pieces,
         DragTarget<QuartoPiece> target, Draggable.CallBack dCallBack) {
         super(viewport, transform, dimensions);
         this.baseWidth = Math.min(viewport.width()/2, viewport.height()/4) * PIECE_PROPORTION;
@@ -23,11 +23,8 @@ public class PieceBank extends Drawable {
         this.drags = new ArrayList<PieceDraggable>();
 
         for (QuartoPiece p: pieces) {
-            if (p.getLight() != filterLight) {
-                continue;
-            }
             PieceDraggable draggable = new PieceDraggable(viewport,
-                                            new TransformData(pieceMapper(p).add(transform.getX(), transform.getY(), transform.getZ()), new PVector(-PApplet.PI/3,0,0)),
+                                            new TransformData(pieceMapper(p).add(transform.getPosition()), new PVector(-(0.35f*PApplet.PI),0,0)),
                                             new PVector(baseWidth, baseWidth, baseWidth * PieceDrawable.HEIGHT_TO_WIDTH_RATIO),
                                             p);
             draggable.addCallback(

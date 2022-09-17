@@ -49,6 +49,11 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
             return false;
         }
         boolean accepted = quartoBoard.placePiece(lastIndex/4, lastIndex%4, draggable.getPayload());
+        if (accepted) {
+            pieces[lastIndex] = new PieceDrawable(viewport, new TransformData(),
+                                                    new PVector(pieceWidth, pieceWidth, dimensions.z),
+                                                    quartoBoard.getPiece(lastIndex/4, lastIndex%4));
+        }
         lastIndex = -1;
         return accepted;
     }
@@ -116,12 +121,7 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
                     graphics.fill(25, 240, 30);
                 }
                 graphics.ellipse(0, 0, 1.5f*pieceWidth, 1.5f*pieceWidth);
-                if (quartoBoard.pieceAt(i, j)) {
-                    if (pieces[4*i + j] == null) {
-                        pieces[4*i + j] = new PieceDrawable(viewport, new TransformData(),
-                                                            new PVector(pieceWidth, pieceWidth, dimensions.z),
-                                                            quartoBoard.getPiece(i, j));
-                    }
+                if (pieces[4*i+j] != null) {
                     graphics.translate(0, 0, pieces[4*i+j].getHeight()/2);
                     pieces[4*i+j].draw();
                     graphics.translate(0, 0, -pieces[4*i+j].getHeight()/2);

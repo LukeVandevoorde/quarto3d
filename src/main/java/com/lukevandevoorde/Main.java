@@ -5,12 +5,16 @@ import processing.core.PGraphics;
 import processing.core.PVector;
 import processing.event.MouseEvent;
 import java.util.HashSet;
+import java.util.stream.Collectors;
+
 import com.lukevandevoorde.classes.AnimatedDrawable;
 import com.lukevandevoorde.classes.BoardDrawable;
 import com.lukevandevoorde.classes.PieceBank;
 import com.lukevandevoorde.classes.TransformData;
 import com.lukevandevoorde.classes.Viewport;
+import com.lukevandevoorde.interfaces.Clickable;
 import com.lukevandevoorde.interfaces.Draggable;
+import com.lukevandevoorde.interfaces.Hoverable;
 import com.lukevandevoorde.interfaces.MouseCoordinator;
 import com.lukevandevoorde.interfaces.TimeKeeper;
 
@@ -24,8 +28,12 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     private PieceBank leftPieceBank, rightPieceBank;
     private TransformData userView, selectView;
 
+    private HashSet<Hoverable> hoverables;
+    private HashSet<Clickable> clickables;
+    private Clickable selectedClickable;
     private HashSet<Draggable<?>> draggables;
     private Draggable<?> selectedDraggable;
+    private boolean mouseDown;
     private boolean dragging;
 
     public static void main(String[] args) {
@@ -37,6 +45,9 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         MOUSE_COORDINATOR = this;
         dragging = false;
         draggables = new HashSet<Draggable<?>>();
+        hoverables = new HashSet<Hoverable>();
+        clickables = new HashSet<Clickable>();
+        mouseDown = false;
     }
 
     public void settings() {
@@ -45,8 +56,8 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     }
 
     public void setup() {
-        boardViewport = new Viewport(createGraphics(width, height, P3D), new PVector(0, 0), PI/4);
-        userView = new TransformData(new PVector(boardViewport.width()/2, 3*boardViewport.height()/5, -boardViewport.height()/2), new PVector(-PI/3, 0, 0));
+        boardViewport = new Viewport(createGraphics(width, height, P3D), new PVector(0, 0), QUARTER_PI);
+        userView = new TransformData(new PVector(boardViewport.width()/2, 3*boardViewport.height()/5, -boardViewport.height()/2), new PVector(-THIRD_PI, 0, 0));
         selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/2), new PVector(0, 0, 0));
         // selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/6), new PVector(0, 0, 0));
         // selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, 0), new PVector(0, 0, 0));
@@ -57,10 +68,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
         Draggable.CallBack callBack = new Draggable.CallBack() {
             public void onStartDrag() {
-                if (userView.getRotZ() < 0) {
-                    userView.setRotZ(userView.getRotZ() % (2*PI));
-                }
-                selectView.setRotZ(((int)((userView.getRotZ()) / (PI/2) + 0.5f)) * PI / 2);
+                selectView.setRotZ(((int)((userView.getRotZ()) / HALF_PI + 0.5f)) * HALF_PI);
                 quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
                 quartoBoard.skipAnimation();
                 quartoBoard.animate(selectView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
@@ -79,12 +87,19 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
             }
         };
 
-        leftPieceBank = new PieceBank(boardViewport, new TransformData(new PVector(0, 0, -boardViewport.height()/4), new PVector()), 
+        leftPieceBank = new PieceBank(boardViewport,
+                                        new TransformData(new PVector(0, 0, selectView.getZ() + BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()).z), new PVector()), 
                                         new PVector(boardViewport.width()/4, boardViewport.height()),
-                                        qb.getQuartoBoard().getRemainingPieces(), false, qb, callBack);
+                                        qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> !p.getLight()).collect(Collectors.toSet()),
+                                        qb,
+                                        callBack);
 
-        rightPieceBank = new PieceBank(boardViewport, new TransformData(new PVector(3*boardViewport.width()/4, 0, -boardViewport.height()/4), new PVector()),
-                                        new PVector(boardViewport.width()/4, boardViewport.height()), qb.getQuartoBoard().getRemainingPieces(), true, qb, callBack);
+        rightPieceBank = new PieceBank(boardViewport,
+                                        new TransformData(new PVector(3*boardViewport.width()/4, 0, 0), new PVector()),
+                                        new PVector(boardViewport.width()/4, boardViewport.height()),
+                                        qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> p.getLight()).collect(Collectors.toSet()),
+                                        qb,
+                                        callBack);
         
     }
 
@@ -113,8 +128,28 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     }
 
     @Override
+    public void add(Hoverable hoverable) {
+        hoverables.add(hoverable);
+    }
+
+    @Override
+    public void add(Clickable clickable) {
+        clickables.add(clickable);
+    }
+
+    @Override
     public void remove(Draggable<?> draggable) {
         draggables.remove(draggable);
+    }
+
+    @Override
+    public void remove(Hoverable hoverable) {
+        hoverables.remove(hoverable);
+    }
+
+    @Override
+    public void remove(Clickable clickable) {
+        clickables.remove(clickable);
     }
 
     @Override
@@ -136,9 +171,18 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
     @Override
     public void mousePressed() {
+        mouseDown = true;
+        dragging = false;
+
+        for (Clickable c: clickables) {
+            if (c.mouseHover(mouseX, mouseY)) {
+                selectedClickable = c;
+                break;
+            }
+        }
+
         for (Draggable<?> d: draggables) {
             if (d.mouseHover(mouseX, mouseY)) {
-                dragging = true;
                 selectedDraggable = d;
                 d.startDrag();
                 break;
@@ -148,9 +192,13 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
     @Override
     public void mouseReleased() {
-        if (dragging) {
+        mouseDown = false;
+
+        if (dragging) { // Drag complete
             dragging = false;
             selectedDraggable.endDrag();
+        } else {    // Click complete
+            selectedClickable.onClick();
         }
     }
 
@@ -167,13 +215,8 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
             PVector arm = new PVector(pmouseX - centerX, pmouseY - centerY);
             PVector drag = new PVector(mouseX - pmouseX, mouseY - pmouseY);
 
-            userView.setRotX(min(0, max(userView.getRotX() + 0.01f*(this.mouseY - this.pmouseY), -PI/2)));
-            userView.setRotZ((userView.getRotZ() + (0.01f) * drag.cross(arm).z / arm.mag()) % (2*PI));
+            userView.setRotX(min(0, max(userView.getRotX() + 0.01f*(this.mouseY - this.pmouseY), -HALF_PI)));
+            userView.setRotZ(((userView.getRotZ() + (0.01f) * drag.cross(arm).z / arm.mag()) % TWO_PI + TWO_PI) % TWO_PI);
         }
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent event) {
-        super.mouseClicked(event);
     }
 }
