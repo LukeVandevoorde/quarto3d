@@ -33,7 +33,6 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     private Clickable selectedClickable;
     private HashSet<Draggable<?>> draggables;
     private Draggable<?> selectedDraggable;
-    private boolean mouseDown;
     private boolean dragging;
 
     public static void main(String[] args) {
@@ -47,7 +46,6 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         draggables = new HashSet<Draggable<?>>();
         hoverables = new HashSet<Hoverable>();
         clickables = new HashSet<Clickable>();
-        mouseDown = false;
     }
 
     public void settings() {
@@ -171,7 +169,6 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
     @Override
     public void mousePressed() {
-        mouseDown = true;
         dragging = false;
 
         for (Clickable c: clickables) {
@@ -184,6 +181,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         for (Draggable<?> d: draggables) {
             if (d.mouseHover(mouseX, mouseY)) {
                 selectedDraggable = d;
+                dragging = true;
                 d.startDrag();
                 break;
             }
@@ -192,12 +190,10 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
     @Override
     public void mouseReleased() {
-        mouseDown = false;
-
-        if (dragging) { // Drag complete
+        if (dragging && selectedDraggable != null) { // Drag complete
             dragging = false;
             selectedDraggable.endDrag();
-        } else {    // Click complete
+        } else if (selectedClickable != null) {    // Click complete
             selectedClickable.onClick();
         }
     }
