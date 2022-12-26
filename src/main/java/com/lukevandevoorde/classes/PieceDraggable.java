@@ -80,6 +80,7 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
     public void update() {
         float scale = viewport.getScale(transform.getZ() + animatedPiece.transform.getZ());
         
+        // TODO: use viewport.effectiveX() and viewport.effectiveY()
         transform.setX((viewport.width()/2) + (Main.MOUSE_COORDINATOR.getMouseX() - viewport.width()/2)/scale);
         transform.setY((viewport.height()/2) + (Main.MOUSE_COORDINATOR.getMouseY() - viewport.height()/2)/scale);
 

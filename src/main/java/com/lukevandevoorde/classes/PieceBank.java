@@ -3,6 +3,8 @@ package com.lukevandevoorde.classes;
 import java.util.Set;
 
 import java.util.ArrayList;
+import java.util.Collection;
+
 import processing.core.PApplet;
 import processing.core.PVector;
 import com.lukevandevoorde.interfaces.DragTarget;
@@ -16,7 +18,7 @@ public class PieceBank extends Drawable {
     private float baseWidth;
 
     public PieceBank(Viewport viewport, TransformData transform, PVector dimensions, Set<QuartoPiece> pieces,
-        DragTarget<QuartoPiece> target, Draggable.CallBack dCallBack) {
+        Collection<DragTarget<QuartoPiece>> targets, Draggable.CallBack dCallBack) {
         super(viewport, transform, dimensions);
         this.baseWidth = Math.min(viewport.width()/2, viewport.height()/4) * PIECE_PROPORTION;
 
@@ -35,7 +37,7 @@ public class PieceBank extends Drawable {
                 }
             );
             draggable.addCallback(dCallBack);
-            draggable.addTarget(target);
+            targets.forEach(target -> draggable.addTarget(target));
             drags.add(draggable);
         }
     }
@@ -62,11 +64,11 @@ public class PieceBank extends Drawable {
         pos.x += dimensions.x / 4;
         pos.y += dimensions.y / 8;
 
-        if (piece.getSquare()) {
+        if (piece.getLight()) {
             pos.x += dimensions.x/2;
         }
 
-        if (!piece.getFilled()) {
+        if (!piece.getSquare()) {
             pos.y += dimensions.y/4;
         }
 

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import com.lukevandevoorde.classes.AnimatedDrawable;
 import com.lukevandevoorde.classes.BoardDrawable;
 import com.lukevandevoorde.classes.PieceBank;
+import com.lukevandevoorde.classes.PieceOfferingHolder;
 import com.lukevandevoorde.classes.TransformData;
 import com.lukevandevoorde.classes.Viewport;
 import com.lukevandevoorde.interfaces.Clickable;
@@ -17,6 +18,7 @@ import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.interfaces.Hoverable;
 import com.lukevandevoorde.interfaces.MouseCoordinator;
 import com.lukevandevoorde.interfaces.TimeKeeper;
+import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
@@ -26,6 +28,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     private Viewport boardViewport;
     private AnimatedDrawable quartoBoard;
     private PieceBank leftPieceBank, rightPieceBank;
+    private PieceOfferingHolder p1PieceOfferingHolder, p2PieceOfferingHolder;
     private TransformData userView, selectView;
 
     private HashSet<Hoverable> hoverables;
@@ -85,20 +88,26 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
             }
         };
 
+        p1PieceOfferingHolder = new PieceOfferingHolder(boardViewport, selectView, null, qb, callBack);
+        p2PieceOfferingHolder = new PieceOfferingHolder(boardViewport, selectView, null, qb, callBack);
+        
+        // DragTarget<QuartoPiece>[] holders = new DragTarget<QuartoPiece>[]{p1PieceOfferingHolder, p2PieceOfferingHolder};
+
+        // Pieces without holes
         leftPieceBank = new PieceBank(boardViewport,
                                         new TransformData(new PVector(0, 0, selectView.getZ() + BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()).z), new PVector()), 
                                         new PVector(boardViewport.width()/4, boardViewport.height()),
-                                        qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> !p.getLight()).collect(Collectors.toSet()),
+                                        qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> p.getFilled()).collect(Collectors.toSet()),
                                         qb,
                                         callBack);
 
+        // Pieces with holes
         rightPieceBank = new PieceBank(boardViewport,
                                         new TransformData(new PVector(3*boardViewport.width()/4, 0, 0), new PVector()),
                                         new PVector(boardViewport.width()/4, boardViewport.height()),
-                                        qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> p.getLight()).collect(Collectors.toSet()),
+                                        qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> !p.getFilled()).collect(Collectors.toSet()),
                                         qb,
                                         callBack);
-        
     }
 
     public void draw() {        
