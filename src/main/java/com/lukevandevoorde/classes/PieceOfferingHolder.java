@@ -28,7 +28,7 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
         graphics.pushMatrix();
 
         
-
+        
 
         graphics.popMatrix();
     }

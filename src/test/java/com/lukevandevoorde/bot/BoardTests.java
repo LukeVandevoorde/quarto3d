@@ -7,6 +7,94 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 public class BoardTests {
+
+    @Test
+    public void testMoveBoard() {
+        QB board = new QB();
+        byte p1 = QB.piece(true, false, false, false);
+        byte p2 = QB.piece(true, true, false, false);
+        byte p3 = QB.piece(true, false, true, false);
+        byte p4 = QB.piece(true, false, false, true);
+        
+        assertFalse(board.move(p1, 1, 0));
+        assertFalse(board.move(p2, 2, 2)); // eq diag
+        assertFalse(board.move(p3, 0, 3)); // comp diag
+        assertFalse(board.move(p4, 3, 1));
+
+        assertEquals(board.pieceAt(0, 0), 0);
+        assertEquals(board.pieceAt(1, 0), p1);
+        assertEquals(board.pieceAt(2, 2), p2);
+        assertEquals(board.pieceAt(0, 3), p3);
+        assertEquals(board.pieceAt(3, 1), p4); 
+    }
+
+    @Test
+    public void testMoveHazards() {
+        QB board = new QB();
+        byte p1 = QB.piece(true, false, false, false);
+        byte p2 = QB.piece(true, true, false, false);
+        byte p3 = QB.piece(true, false, true, false);
+        byte p4 = QB.piece(true, false, false, true);
+        
+        assertFalse(board.move(p1, 1, 0));
+        assertFalse(board.move(p2, 2, 2)); // eq diag
+        assertFalse(board.move(p3, 0, 3)); // comp diag
+        assertFalse(board.move(p4, 3, 1));
+        
+        byte[] hazards;
+        
+        hazards = board.getHazards(0, 0); // eq diag
+        assertEquals((byte)(p3 & -1), hazards[0]);
+        assertEquals((byte)(p1 & -1), hazards[1]);
+        assertEquals((byte)(p2 & -1), hazards[2]);
+
+        hazards = board.getHazards(2, 1); // comp diag
+        assertEquals((byte)(p2 & -1), hazards[0]);
+        assertEquals((byte)(p4 & -1), hazards[1]);
+        assertEquals((byte)(p3 & -1), hazards[2]);
+
+        hazards = board.getHazards(3, 2);
+        assertEquals((byte)(p4 & -1), hazards[0]);
+        assertEquals((byte)(p2 & -1), hazards[1]);
+
+        hazards = board.getHazards(1, 3);
+        assertEquals((byte)(p1 & -1), hazards[0]);
+        assertEquals((byte)(p3 & -1), hazards[1]);
+    }
+
+    @Test
+    public void testMoveCounts() {
+        QB board = new QB();
+        byte p1 = QB.piece(true, false, false, false);
+        byte p2 = QB.piece(true, true, false, false);
+        byte p3 = QB.piece(true, false, true, false);
+        byte p4 = QB.piece(true, false, false, true);
+        
+        assertFalse(board.move(p1, 1, 0));
+        assertFalse(board.move(p2, 2, 2)); // eq diag
+        assertFalse(board.move(p3, 0, 3)); // comp diag
+        assertFalse(board.move(p4, 3, 1));
+        
+        int[] counts;
+        
+        counts = board.getCounts(0, 0); // eq diag
+        assertEquals(1, counts[0]);
+        assertEquals(1, counts[1]);
+        assertEquals(1, counts[2]);
+
+        counts = board.getCounts(2, 1); // comp diag
+        assertEquals(1, counts[0]);
+        assertEquals(1, counts[1]);
+        assertEquals(1, counts[2]);
+
+        counts = board.getCounts(3, 2);
+        assertEquals(1, counts[0]);
+        assertEquals(1, counts[1]);
+
+        counts = board.getCounts(1, 3);
+        assertEquals(1, counts[0]);
+        assertEquals(1, counts[1]);
+    }
     
     @Test
     public void testBoardRowWin() {
@@ -74,18 +162,19 @@ public class BoardTests {
         
         board.move(p1, 0, 0);
         byte[] hazards = board.getHazards(0, 0);
-        assertEquals(hazards[0], (byte)0b10101001);
+        assertEquals((byte)0b10101001, hazards[0]);
 
         board.move(p2, 0, 1);
         hazards = board.getHazards(0, 1);
-        assertEquals(hazards[0], (byte)0b10100001);
+        assertEquals((byte)0b10100001, hazards[0]);
 
         board.move(p3, 0, 2);
         hazards = board.getHazards(0, 2);
-        assertEquals(hazards[0], (byte)0b10000001);
+        assertEquals((byte)0b10000001, hazards[0]);
 
         board.move(p4, 0, 3);
         hazards = board.getHazards(0, 3);
+        assertEquals((byte)0b00000001, hazards[0]);
     }
 
     @Test
@@ -98,12 +187,32 @@ public class BoardTests {
 
         board.move(p1, 0, 0);
         board.move(p2, 0, 1);
+        byte[] h1 = board.getHazards(0, 2);
         board.move(p3, 0, 2);
-
-        byte[] hazards = board.getHazards(0, 2);
+        byte[] h2 = board.getHazards(0, 3);
         board.move(p4, 0, 3);
         
-        
+        byte[] hazards;
+        int[] counts;
+        // Undo 1
+        board.undo(0, 3, h2[0], h2[1], h2[2]);
+        hazards = board.getHazards(0, 3);
+        counts = board.getCounts(0, 3);
+        assertEquals((byte)0b10000001, hazards[0]);
+        assertEquals((byte)(-1), hazards[1]);
+        assertEquals((byte)(-1), hazards[2]);
+        assertEquals(3, counts[0]);
+        assertEquals(0, counts[1]);
+        assertEquals(0, counts[2]);
+
+        // Undo 2
+        board.undo(0, 2, h1[0], h1[1], (byte)0);
+        hazards = board.getHazards(0, 2);
+        counts = board.getCounts(0, 2);
+        assertEquals((byte)0b10100001, hazards[0]);
+        assertEquals((byte)(-1), hazards[1]);
+        assertEquals(2, counts[0]);
+        assertEquals(0, counts[1]);
     }
 
 }

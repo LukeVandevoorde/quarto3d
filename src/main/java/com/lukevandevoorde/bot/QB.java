@@ -4,18 +4,15 @@ import java.util.HashSet;
 
 public class QB {
 
-    private byte[] rowHazards, colHazards;
-    private byte eqIdxDiagHazard, compIdxDiagHazard;
+    protected byte[] rowHazards, colHazards;
+    protected byte eqIdxDiagHazard, compIdxDiagHazard;
 
-    private int[] rowCounts, colCounts;
-    private int eqIdxDiagCount, compIdxDiagCount;
+    protected int[] rowCounts, colCounts;
+    protected int eqIdxDiagCount, compIdxDiagCount;
 
-    private byte[][] board;
-    private boolean won;
-    private HashSet<Byte> remainingPieces;
-
-    private int rrow, rcol;
-    private byte pieceToOffer;
+    protected byte[][] board;
+    protected boolean won;
+    protected HashSet<Byte> remainingPieces;
 
     public QB () {
         rowHazards = new byte[]{-1, -1, -1, -1};
@@ -45,25 +42,14 @@ public class QB {
         this.colCounts = new int[4];
         this.remainingPieces = new HashSet<Byte>();
 
-        this.rowHazards[0] = other.rowHazards[0];
-        this.rowHazards[1] = other.rowHazards[1];
-        this.rowHazards[2] = other.rowHazards[2];
-        this.rowHazards[3] = other.rowHazards[3];
-        this.colHazards[0] = other.colHazards[0];
-        this.colHazards[1] = other.colHazards[1];
-        this.colHazards[2] = other.colHazards[2];
-        this.colHazards[3] = other.colHazards[3];
+        for (int i = 0; i < 4; i++) {
+            this.rowHazards[i] = other.rowHazards[i];
+            this.colHazards[i] = other.colHazards[i];
+            this.rowCounts[i] = other.rowCounts[i];
+            this.colCounts[i] = other.colCounts[i];
+        }
         this.eqIdxDiagHazard = other.eqIdxDiagHazard;
         this.compIdxDiagHazard = other.compIdxDiagHazard;
-
-        this.rowCounts[0] = other.rowCounts[0];
-        this.rowCounts[1] = other.rowCounts[1];
-        this.rowCounts[2] = other.rowCounts[2];
-        this.rowCounts[3] = other.rowCounts[3];
-        this.colCounts[0] = other.colCounts[0];
-        this.colCounts[1] = other.colCounts[1];
-        this.colCounts[2] = other.colCounts[2];
-        this.colCounts[3] = other.colCounts[3];
         this.eqIdxDiagCount = other.eqIdxDiagCount;
         this.compIdxDiagCount = other.compIdxDiagCount;
 
@@ -73,52 +59,6 @@ public class QB {
             this.remainingPieces.add(b);
         }
     }
-
-    // public Move nextMove(byte pieceToPlace) {
-        
-    // }
-
-    // private float alphabeta(boolean maximizing, QB board, byte pieceToPlace, int depth, float alpha, float beta) {
-    //     if (depth <= 0) return 0;
-        
-    //     byte hrow, hcol, hdiag = 0;
-    //     if (maximizing) {
-    //         float bestScore = Float.MIN_VALUE, score;
-    //         int bestRow = -1, bestCol = -1;
-    //         for (int row = -1; ++row < 4;) {
-    //             for (int col = -1; ++col < 4;) {
-    //                 if (board.board[row][col] != 0) continue;
-                    
-    //                 hrow = board.rowHazards[row];
-    //                 hcol = board.colHazards[col];
-    //                 if (row == col) hdiag = board.eqIdxDiagHazard;
-    //                 else if (3 - row == col) hdiag = board.compIdxDiagHazard;
-                    
-    //                 // Check win
-    //                 if (board.move(pieceToPlace, row, col)) {
-    //                     board.undo(row, col, hrow, hcol, hdiag);
-    //                     this.rrow = row;
-    //                     this.rcol = col;
-    //                     return 10000 + depth;
-    //                 }
-    //                 if (remainingPieces.size() == 0) bestScore = 0;
-                    
-    //                 for (byte pieceToOffer: board.remainingPieces) {
-    //                     score = alphabeta(false, board, pieceToOffer, depth-1, alpha, beta);
-    //                     if (score > bestScore) {
-    //                         bestScore = score;
-    //                         bestRow = this.rrow;
-    //                         bestCol = this.rcol;
-    //                     }
-    //                 }
-                    
-    //                 board.undo(row, col, hrow, hcol, hdiag);
-    //             }
-    //         }
-    //     } else {
-
-    //     }
-    // }
 
     public static byte piece(boolean isTall, boolean isLight, boolean isSquare, boolean isFilled) {
         byte p = 0;
@@ -137,42 +77,54 @@ public class QB {
     // returns true if placing piece in the given position results in a win
     public boolean move(byte piece, int row, int col) {
         board[row][col] = piece;
-        won |= ((rowHazards[row] &= piece) != 0 && (rowCounts[row] += 1) >= 4) || ((colHazards[col] &= piece) != 0 && (colCounts[col] += 1) >= 4);
-        if (row == col) won |= (eqIdxDiagHazard &= piece) != 0 && (eqIdxDiagCount += 1) >= 4;
-        else if (3 - row == col) won |= (compIdxDiagHazard &= piece) != 0 && (compIdxDiagCount += 1) >=4;
+
+        boolean rowHazardous = (rowHazards[row] &= piece) != 0;
+        boolean rowFull = (rowCounts[row] += 1) >= 4;
+        boolean colHazardous = (colHazards[col] &= piece) != 0;
+        boolean colFull = (colCounts[col] += 1) >= 4;
+        won |= (rowFull && rowHazardous) || (colFull && colHazardous);
+
+        if (row == col) {
+            boolean diagHazardous = (eqIdxDiagHazard &= piece) != 0;
+            boolean diagFull = (eqIdxDiagCount += 1) >= 4;
+            won |= diagFull && diagHazardous;
+        } else if (3 - row == col) {
+            boolean diagHazardous = (compIdxDiagHazard &= piece) != 0;
+            boolean diagFull = (compIdxDiagCount += 1) >= 4;
+            won |= diagFull && diagHazardous;
+        }
+
         remainingPieces.remove(piece);
         return won;
     }
 
-    public void undo(int row, int col, byte hrow, byte hcol, byte hdiag) {
+    // if not a diag, prevDiagHazard is disregarded
+    public void undo(int row, int col, byte prevRowHazard, byte prevColHazard, byte prevDiagHazard) {
         remainingPieces.add(board[row][col]);
         board[row][col] = 0;
-        rowHazards[row] = hrow;
+        rowHazards[row] = prevRowHazard;
         rowCounts[row] -= 1;
-        colHazards[col] = hcol;
+        colHazards[col] = prevColHazard;
         colCounts[col] -= 1;
+        won = false;
         if (row == col){
-            eqIdxDiagHazard = hdiag;
+            eqIdxDiagHazard = prevDiagHazard;
             eqIdxDiagCount -= 1;
         } else if (3 - row == col) {
-            compIdxDiagHazard = hdiag;
+            compIdxDiagHazard = prevDiagHazard;
             compIdxDiagCount -= 1;
         }
-        won = false;
     }
 
-    public byte doIter() {
-        byte r = 0;
-        for (byte b: remainingPieces) {
-            r |= b;
-        }
-        return r;
-    }
-
-    public byte get(int row, int col) {
+    public byte pieceAt(int row, int col) {
         return board[row][col];
     }
 
+    public HashSet<Byte> remainingPieces() {
+        return this.remainingPieces;
+    }
+
+    // [row hazard, col hazard, {diag hazard}]
     public byte[] getHazards(int row, int col) {
         if (row == col) {
             return new byte[]{rowHazards[row], colHazards[col], eqIdxDiagHazard};
@@ -180,5 +132,15 @@ public class QB {
             return new byte[]{rowHazards[row], colHazards[col], compIdxDiagHazard};
         }
         return new byte[]{rowHazards[row], colHazards[col]};
+    }
+
+    // [row count, col count, {diag count}]
+    public int[] getCounts(int row, int col) {
+        if (row == col) {
+            return new int[]{rowCounts[row], colCounts[col], eqIdxDiagCount};
+        } else if (3 - row == col) {
+            return new int[]{rowCounts[row], colCounts[col], compIdxDiagCount};
+        }
+        return new int[]{rowCounts[row], colCounts[col]};
     }
 }
