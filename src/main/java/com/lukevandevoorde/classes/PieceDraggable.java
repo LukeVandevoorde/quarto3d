@@ -7,10 +7,10 @@ import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
-public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
+public class PieceDraggable extends Drawable implements Draggable<PieceDraggable> {
 
     private QuartoPiece piece;
-    private HashSet<DragTarget<QuartoPiece>> targets;
+    private HashSet<DragTarget<PieceDraggable>> targets;
     private HashSet<Draggable.CallBack> callBacks;
 
     private TransformData baseViewPosition, pieceRotationViewData, pieceRotationDragData;
@@ -21,7 +21,7 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
         super(graphics, new TransformData(transform.getPosition(), new PVector()), dimensions);
         this.piece = piece;
         callBacks = new HashSet<Draggable.CallBack>();
-        targets = new HashSet<DragTarget<QuartoPiece>>();
+        targets = new HashSet<DragTarget<PieceDraggable>>();
 
         baseViewPosition = new TransformData(transform.getPosition(), new PVector());    // Could maybe init this when calling super constructor somehow
         pieceRotationViewData = new TransformData(new PVector(), transform.getRotation());
@@ -32,6 +32,10 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
         PieceDrawable pieceDrawable = new PieceDrawable(graphics, pieceRotationViewData, dimensions, piece);
         animatedPiece = new AnimatedDrawable(pieceDrawable);
         Main.MOUSE_COORDINATOR.add(this);
+    }
+
+    public QuartoPiece getPiece() {
+        return this.piece;
     }
 
     @Override
@@ -59,13 +63,13 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
     }
 
     @Override
-    public void addTarget(DragTarget<QuartoPiece> target) {
+    public void addTarget(DragTarget<PieceDraggable> target) {
         targets.add(target);
     }
 
     @Override
-    public QuartoPiece getPayload() {
-        return this.piece;
+    public PieceDraggable getPayload() {
+        return this;
     }
 
     @Override
@@ -84,7 +88,7 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
         transform.setX((viewport.width()/2) + (Main.MOUSE_COORDINATOR.getMouseX() - viewport.width()/2)/scale);
         transform.setY((viewport.height()/2) + (Main.MOUSE_COORDINATOR.getMouseY() - viewport.height()/2)/scale);
 
-        for (DragTarget<QuartoPiece> t: targets) {
+        for (DragTarget<PieceDraggable> t: targets) {
             t.mouseHover(Main.MOUSE_COORDINATOR.getMouseX(), Main.MOUSE_COORDINATOR.getMouseY());
         }
 
@@ -95,7 +99,7 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
     public void endDrag() {
         boolean accepted = false;
 
-        for (DragTarget<QuartoPiece> target: targets) {
+        for (DragTarget<PieceDraggable> target: targets) {
             accepted = target.accept(this);
             if (accepted) {
                 break;
@@ -112,6 +116,7 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece> {
                 c.onReject();
             }
         }
+        
         animatedPiece.animate(animatedPiece.getCurrentTransform(), animatedPiece.getCurrentDimensions(), 0);
         animatedPiece.skipAnimation();
         animatedPiece.animate(pieceRotationViewData, dimensions, 350);

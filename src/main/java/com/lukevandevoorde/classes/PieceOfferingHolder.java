@@ -1,36 +1,39 @@
 package com.lukevandevoorde.classes;
 
+import com.lukevandevoorde.Main;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
-import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 import processing.core.PVector;
 import processing.core.PGraphics;
 
-public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPiece> {
+public class PieceOfferingHolder extends Drawable implements DragTarget<PieceDraggable> {
     
-    private QuartoPiece offering;
     private PieceDraggable drag;
-    private DragTarget<QuartoPiece> board;
+    private DragTarget<PieceDraggable> board;
     private Draggable.CallBack dCallBack;
     private boolean occupied;
 
-    public PieceOfferingHolder(Viewport viewport, TransformData transform, PVector dimensions, DragTarget<QuartoPiece> board, Draggable.CallBack dCallBack) {
+    public PieceOfferingHolder(Viewport viewport, TransformData transform, PVector dimensions, DragTarget<PieceDraggable> board, Draggable.CallBack boardPlaceCallback) {
         super(viewport, transform, dimensions);
         this.board = board;
-        this.dCallBack = dCallBack;
+        this.dCallBack = boardPlaceCallback;
         occupied = false;
     }
 
     @Override
     public void draw() {
         PGraphics graphics = viewport.getGraphics();
-        graphics.pushMatrix();
+        graphics.push();
+        if (drag != null) {
+            drag.draw();
+        }
+        this.transform.transform(graphics);
+        graphics.noFill();
+        graphics.strokeWeight(5);
+        graphics.rect(0, 0, dimensions.x, dimensions.y);
 
-        
-        
-
-        graphics.popMatrix();
+        graphics.pop();
     }
 
     @Override
@@ -50,14 +53,24 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
     }
 
     @Override
-    public boolean accept(Draggable<QuartoPiece> draggable) {
-        if (occupied) return false;
+    public boolean accept(Draggable<PieceDraggable> draggable) {
+        if (occupied || !mouseHover(Main.MOUSE_COORDINATOR.getMouseX(), Main.MOUSE_COORDINATOR.getMouseY())) return false;
 
-        this.offering = draggable.getPayload();
-        this.drag = new PieceDraggable(viewport, transform, new PVector(dimensions.x/2, dimensions.y/2, dimensions.y), offering);
-        this.drag.addTarget(board);
-        this.drag.addCallback(this.dCallBack);
-
+        occupied = true;
+        PieceDraggable d = draggable.getPayload();
+        this.drag = d;
+        
+        Draggable.CallBack removeCallBack = new Draggable.CallBack() {
+            public void onAccept() {
+                drag = null;
+                occupied = false;
+            }
+        };
+        
+        d.addTarget(board);
+        d.addCallback(this.dCallBack);
+        d.addCallback(removeCallBack);
+        
         return true;
     }
 }

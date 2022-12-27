@@ -5,9 +5,8 @@ import processing.core.PVector;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.quartolayer.QuartoBoard;
-import com.lukevandevoorde.quartolayer.QuartoPiece;
 
-public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
+public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable> {
     
     private static final float PIECE_WIDTH_PROPORTION = 0.14f;
     private static final float EDGE_PADDING_BIAS = 1.25f;
@@ -44,11 +43,11 @@ public class BoardDrawable extends Drawable implements DragTarget<QuartoPiece> {
     }
 
     @Override
-    public boolean accept(Draggable<QuartoPiece> draggable) {
+    public boolean accept(Draggable<PieceDraggable> draggable) {
         if (lastIndex < 0) {
             return false;
         }
-        boolean accepted = quartoBoard.placePiece(lastIndex/4, lastIndex%4, draggable.getPayload());
+        boolean accepted = quartoBoard.placePiece(lastIndex/4, lastIndex%4, draggable.getPayload().getPiece());
         if (accepted) {
             pieces[lastIndex] = new PieceDrawable(viewport, new TransformData(),
                                                     new PVector(pieceWidth, pieceWidth, dimensions.z),

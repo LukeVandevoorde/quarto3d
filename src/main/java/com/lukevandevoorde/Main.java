@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import com.lukevandevoorde.classes.AnimatedDrawable;
 import com.lukevandevoorde.classes.BoardDrawable;
 import com.lukevandevoorde.classes.PieceBank;
+import com.lukevandevoorde.classes.PieceDraggable;
 import com.lukevandevoorde.classes.PieceOfferingHolder;
 import com.lukevandevoorde.classes.TransformData;
 import com.lukevandevoorde.classes.Viewport;
@@ -70,7 +71,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         quartoBoard = new AnimatedDrawable(qb);
         quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 1500);
 
-        Draggable.CallBack callBack = new Draggable.CallBack() {
+        Draggable.CallBack placingCallback = new Draggable.CallBack() {
             public void onStartDrag() {
                 selectView.setRotZ(((int)((userView.getRotZ()) / HALF_PI + 0.5f)) * HALF_PI);
                 quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
@@ -79,9 +80,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
             }
 
             public void onReject() {
-                quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
-                quartoBoard.skipAnimation();
-                quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
+                onAccept();
             }
 
             public void onAccept() {
@@ -91,26 +90,33 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
             }
         };
 
-        p1PieceOfferingHolder = new PieceOfferingHolder(boardViewport, selectView, null, qb, callBack);
-        p2PieceOfferingHolder = new PieceOfferingHolder(boardViewport, selectView, null, qb, callBack);
+        p1PieceOfferingHolder = new PieceOfferingHolder(boardViewport,
+                                                        new TransformData(new PVector(0, 0.8f*boardViewport.height()), new PVector()),
+                                                        new PVector(boardViewport.width()/4, 0.2f*boardViewport.height()),
+                                                        qb,
+                                                        placingCallback);
+        p2PieceOfferingHolder = new PieceOfferingHolder(boardViewport,
+                                                        new TransformData(new PVector(3*boardViewport.width()/4, 0.8f*boardViewport.height()), new PVector()),
+                                                        new PVector(boardViewport.width()/4, 0.2f*boardViewport.height()),
+                                                        qb,
+                                                        placingCallback);
         
-        DragTarget<QuartoPiece>[] holders = new PieceOfferingHolder[]{p1PieceOfferingHolder, p2PieceOfferingHolder};
+        DragTarget<PieceDraggable>[] holders = new PieceOfferingHolder[]{p1PieceOfferingHolder, p2PieceOfferingHolder};
 
         // Pieces without holes
         leftPieceBank = new PieceBank(boardViewport,
                                         new TransformData(new PVector(0, 0, selectView.getZ() + BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()).z), new PVector()), 
-                                        new PVector(boardViewport.width()/4, boardViewport.height()),
+                                        new PVector(boardViewport.width()/4, 0.8f*boardViewport.height()),
                                         qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> p.getFilled()).collect(Collectors.toSet()),
-                                        Arrays.asList(holders),
-                                        callBack);
+                                        Arrays.asList(holders)
+                                        );
 
         // Pieces with holes
         rightPieceBank = new PieceBank(boardViewport,
                                         new TransformData(new PVector(3*boardViewport.width()/4, 0, 0), new PVector()),
-                                        new PVector(boardViewport.width()/4, boardViewport.height()),
+                                        new PVector(boardViewport.width()/4, 0.8f*boardViewport.height()),
                                         qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> !p.getFilled()).collect(Collectors.toSet()),
-                                        Arrays.asList(holders),
-                                        callBack);
+                                        Arrays.asList(holders));
     }
 
     public void draw() {        
