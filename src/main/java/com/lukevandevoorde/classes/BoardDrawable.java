@@ -2,6 +2,8 @@ package com.lukevandevoorde.classes;
 
 import processing.core.PGraphics;
 import processing.core.PVector;
+
+import com.lukevandevoorde.Main;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.quartolayer.QuartoBoard;
@@ -16,12 +18,12 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
     private float pieceWidth, interiorPadding, edgePadding;
 
     // used to id spot under hovering PieceDraggable for highlighting
-    private int lastIndex;
+    private int hoverIndex;
 
     public BoardDrawable(Viewport viewport, TransformData transform, PVector dimensions, QuartoBoard quartoBoard) {
         super(viewport, transform, dimensions);
         this.quartoBoard = quartoBoard;
-        lastIndex = -1;
+        hoverIndex = -1;
         pieces = new PieceDrawable[16];
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
@@ -43,17 +45,22 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
     }
 
     @Override
+    public boolean willAccept(Draggable<PieceDraggable> draggable) {
+        return this.mouseHover(Main.MOUSE_COORDINATOR.getMouseX(), Main.MOUSE_COORDINATOR.getMouseY());
+    }
+
+    @Override
     public boolean accept(Draggable<PieceDraggable> draggable) {
-        if (lastIndex < 0) {
+        if (hoverIndex < 0) {
             return false;
         }
-        boolean accepted = quartoBoard.placePiece(lastIndex/4, lastIndex%4, draggable.getPayload().getPiece());
+        boolean accepted = quartoBoard.placePiece(hoverIndex/4, hoverIndex%4, draggable.getPayload().getPiece());
         if (accepted) {
-            pieces[lastIndex] = new PieceDrawable(viewport, new TransformData(),
+            pieces[hoverIndex] = new PieceDrawable(viewport, new TransformData(),
                                                     new PVector(pieceWidth, pieceWidth, dimensions.z),
-                                                    quartoBoard.getPiece(lastIndex/4, lastIndex%4));
+                                                    quartoBoard.getPiece(hoverIndex/4, hoverIndex%4));
         }
-        lastIndex = -1;
+        hoverIndex = -1;
         return accepted;
     }
     
@@ -71,7 +78,7 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
                 testPoint.x = viewport.getGraphics().screenX(0, 0, 0);
                 testPoint.y = viewport.getGraphics().screenY(0, 0, 0);
                 if (this.pieces[4*i+j] == null && m.dist(testPoint) <= scale*1.5f*pieceWidth/2) {
-                    lastIndex = 4*i+j;
+                    hoverIndex = 4*i+j;
                     viewport.getGraphics().popMatrix();
                     return true;
                 }
@@ -79,7 +86,7 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
             }
             viewport.getGraphics().translate(-4*(pieceWidth + interiorPadding), pieceWidth + interiorPadding);
         }
-        lastIndex = -1;
+        hoverIndex = -1;
         viewport.getGraphics().popMatrix();
         return false;
     }
@@ -115,10 +122,9 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                graphics.fill(120, 110, 100);
-                if (lastIndex == 4*i+j) {
-                    graphics.fill(25, 240, 30);
-                }
+                if (hoverIndex == 4*i+j) graphics.fill(25, 240, 30);
+                else graphics.fill(120, 110, 100);
+                
                 graphics.ellipse(0, 0, 1.5f*pieceWidth, 1.5f*pieceWidth);
                 if (pieces[4*i+j] != null) {
                     graphics.translate(0, 0, pieces[4*i+j].getHeight()/2);

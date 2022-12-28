@@ -1,5 +1,6 @@
 package com.lukevandevoorde.classes;
 
+import processing.core.PGraphics;
 import processing.core.PVector;
 import java.util.HashSet;
 import com.lukevandevoorde.Main;
@@ -13,7 +14,7 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
     private HashSet<DragTarget<PieceDraggable>> targets;
     private HashSet<Draggable.CallBack> callBacks;
 
-    private TransformData baseViewPosition, pieceRotationViewData, pieceRotationDragData;
+    private TransformData baseViewPosition, baseViewRotation, pieceRotationDragData;
     private AnimatedDrawable animatedPiece;
     private AnimationManager positionManager;
 
@@ -24,12 +25,12 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         targets = new HashSet<DragTarget<PieceDraggable>>();
 
         baseViewPosition = new TransformData(transform.getPosition(), new PVector());    // Could maybe init this when calling super constructor somehow
-        pieceRotationViewData = new TransformData(new PVector(), transform.getRotation());
+        baseViewRotation = new TransformData(new PVector(), transform.getRotation());
         pieceRotationDragData = new TransformData();
 
         positionManager = new AnimationManager(new TransformData(transform.getPosition(), new PVector()), dimensions);
 
-        PieceDrawable pieceDrawable = new PieceDrawable(graphics, pieceRotationViewData, dimensions, piece);
+        PieceDrawable pieceDrawable = new PieceDrawable(graphics, baseViewRotation, dimensions, piece);
         animatedPiece = new AnimatedDrawable(pieceDrawable);
         Main.MOUSE_COORDINATOR.add(this);
     }
@@ -38,10 +39,14 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         return this.piece;
     }
 
+    public TransformData getBaseTransform() {
+        return new TransformData(baseViewPosition.getPosition(), baseViewRotation.getRotation());
+    }
+
     @Override
     public void setTransform(TransformData newTransform) {
         this.baseViewPosition.set(new TransformData(newTransform.getPosition(), new PVector()));
-        this.pieceRotationViewData.set(new TransformData(new PVector(), newTransform.getRotation()));
+        this.baseViewRotation.set(new TransformData(new PVector(), newTransform.getRotation()));
     }
 
     @Override
@@ -84,12 +89,11 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
     public void update() {
         float scale = viewport.getScale(transform.getZ() + animatedPiece.transform.getZ());
         
-        // TODO: use viewport.effectiveX() and viewport.effectiveY()
-        transform.setX((viewport.width()/2) + (Main.MOUSE_COORDINATOR.getMouseX() - viewport.width()/2)/scale);
-        transform.setY((viewport.height()/2) + (Main.MOUSE_COORDINATOR.getMouseY() - viewport.height()/2)/scale);
+        transform.setX((viewport.width()/2) + (viewport.effectiveX(Main.MOUSE_COORDINATOR.getMouseX()) - viewport.width()/2)/scale);
+        transform.setY((viewport.height()/2) + (viewport.effectiveY(Main.MOUSE_COORDINATOR.getMouseY()) - viewport.height()/2)/scale);
 
         for (DragTarget<PieceDraggable> t: targets) {
-            t.mouseHover(Main.MOUSE_COORDINATOR.getMouseX(), Main.MOUSE_COORDINATOR.getMouseY());
+            if (t.willAccept(this)) break;
         }
 
         positionManager.flushSetTransform(transform);
@@ -97,20 +101,25 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
 
     @Override
     public void endDrag() {
-        boolean accepted = false;
+        boolean willAccept = false;
+        DragTarget<PieceDraggable> t = null;
 
         for (DragTarget<PieceDraggable> target: targets) {
-            accepted = target.accept(this);
-            if (accepted) {
+            if (willAccept = (t = target).willAccept(this)) {
                 break;
             }
         }
 
-        if (accepted) {
+        if (willAccept) {
             Main.MOUSE_COORDINATOR.remove(this);
             for (Draggable.CallBack c: callBacks) {
                 c.onAccept();
             }
+
+            targets.clear();
+            callBacks.clear();
+
+            t.accept(this);
         } else {
             for (Draggable.CallBack c: callBacks) {
                 c.onReject();
@@ -119,7 +128,7 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         
         animatedPiece.animate(animatedPiece.getCurrentTransform(), animatedPiece.getCurrentDimensions(), 0);
         animatedPiece.skipAnimation();
-        animatedPiece.animate(pieceRotationViewData, dimensions, 350);
+        animatedPiece.animate(baseViewRotation, dimensions, 350);
         positionManager.enqueueAnimation(baseViewPosition, dimensions, 350);
     }
 
@@ -128,20 +137,22 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         boolean hovering = false;
         PVector m = viewport.getLocalPoint(new PVector(mouseX, mouseY));
         PVector test = new PVector();
-        viewport.getGraphics().pushMatrix();
-        positionManager.currentTransform().transform(viewport.getGraphics());
+
+        PGraphics graphics = this.viewport.getGraphics();
+        graphics.pushMatrix();
+        positionManager.currentTransform().transform(graphics);
         
-        viewport.getGraphics().translate(0, 0, -animatedPiece.getHeight() / 4);
-        test.x = viewport.getGraphics().screenX(0, 0, 0);
-        test.y = viewport.getGraphics().screenY(0, 0, 0);
+        graphics.translate(0, 0, -animatedPiece.getHeight() / 4);
+        test.x = graphics.screenX(0, 0, 0);
+        test.y = graphics.screenY(0, 0, 0);
         hovering = hovering || m.dist(test) <= viewport.getScale(positionManager.currentTransform().getZ()) * animatedPiece.getWidth();
 
-        viewport.getGraphics().translate(0, 0, animatedPiece.getHeight() / 2);
-        test.x = viewport.getGraphics().screenX(0, 0, 0);
-        test.y = viewport.getGraphics().screenY(0, 0, 0);
+        graphics.translate(0, 0, animatedPiece.getHeight() / 2);
+        test.x = graphics.screenX(0, 0, 0);
+        test.y = graphics.screenY(0, 0, 0);
         hovering = hovering || m.dist(test) <= viewport.getScale(positionManager.currentTransform().getZ()) * animatedPiece.getWidth();
 
-        viewport.getGraphics().popMatrix();
+        graphics.popMatrix();
         return hovering;
     }
 }

@@ -22,7 +22,6 @@ import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Hoverable;
 import com.lukevandevoorde.interfaces.MouseCoordinator;
 import com.lukevandevoorde.interfaces.TimeKeeper;
-import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 

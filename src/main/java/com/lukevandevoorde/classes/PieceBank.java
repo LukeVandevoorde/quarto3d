@@ -18,7 +18,7 @@ public class PieceBank extends Drawable {
     private float baseWidth;
 
     public PieceBank(Viewport viewport, TransformData transform, PVector dimensions, Set<QuartoPiece> pieces,
-        Collection<DragTarget<PieceDraggable>> targets) {
+                        Collection<DragTarget<PieceDraggable>> targets) {
         super(viewport, transform, dimensions);
         this.baseWidth = Math.min(viewport.width()/2, viewport.height()/4) * PIECE_PROPORTION;
 

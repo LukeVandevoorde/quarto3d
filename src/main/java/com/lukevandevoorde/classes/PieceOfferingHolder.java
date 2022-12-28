@@ -4,8 +4,8 @@ import com.lukevandevoorde.Main;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
 
-import processing.core.PVector;
 import processing.core.PGraphics;
+import processing.core.PVector;
 
 public class PieceOfferingHolder extends Drawable implements DragTarget<PieceDraggable> {
     
@@ -53,13 +53,18 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<PieceDra
     }
 
     @Override
+    public boolean willAccept(Draggable<PieceDraggable> draggable) {
+        return !occupied && mouseHover(Main.MOUSE_COORDINATOR.getMouseX(), Main.MOUSE_COORDINATOR.getMouseY());
+    }
+
+    @Override
     public boolean accept(Draggable<PieceDraggable> draggable) {
-        if (occupied || !mouseHover(Main.MOUSE_COORDINATOR.getMouseX(), Main.MOUSE_COORDINATOR.getMouseY())) return false;
+        if (!willAccept(draggable)) return false;
 
         occupied = true;
-        PieceDraggable d = draggable.getPayload();
-        this.drag = d;
-        
+        this.drag = draggable.getPayload();
+        this.drag.setTransform(new TransformData(this.transform.getPosition().add(dimensions.x/2, dimensions.y/2), this.drag.getBaseTransform().getRotation()));
+
         Draggable.CallBack removeCallBack = new Draggable.CallBack() {
             public void onAccept() {
                 drag = null;
@@ -67,9 +72,10 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<PieceDra
             }
         };
         
-        d.addTarget(board);
-        d.addCallback(this.dCallBack);
-        d.addCallback(removeCallBack);
+        Main.MOUSE_COORDINATOR.add(this.drag);
+        this.drag.addTarget(board);
+        this.drag.addCallback(dCallBack);
+        this.drag.addCallback(removeCallBack);
         
         return true;
     }
