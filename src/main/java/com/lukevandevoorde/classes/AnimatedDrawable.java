@@ -24,8 +24,7 @@ public class AnimatedDrawable extends Drawable {
 
     @Override
     public void draw() {
-        drawable.setTransform(animationManager.currentTransform());
-        drawable.setDimensions(animationManager.currentDimensions());
+        animationManager.set(drawable);
         drawable.draw();
     }
 
@@ -51,6 +50,10 @@ public class AnimatedDrawable extends Drawable {
     public PVector getCurrentDimensions() {
         PVector curr = animationManager.currentDimensions();
         return new PVector(curr.x, curr.y, curr.z);
+    }
+
+    public void hold(int millisDuration) {
+        animationManager.enqueueAnimation(null, null, millisDuration);
     }
 
     public void animate(TransformData t, PVector d, int millisDuration) {

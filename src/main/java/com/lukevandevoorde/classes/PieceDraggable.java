@@ -43,6 +43,14 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         return new TransformData(baseViewPosition.getPosition(), baseViewRotation.getRotation());
     }
 
+    public TransformData currentTransform() {
+        return new TransformData(positionManager.currentTransform().getPosition(), animatedPiece.getCurrentTransform().getRotation());
+    }
+
+    public PVector getDimensions() {
+        return this.animatedPiece.getCurrentDimensions();
+    }
+
     @Override
     public void setTransform(TransformData newTransform) {
         this.baseViewPosition.set(new TransformData(newTransform.getPosition(), new PVector()));
@@ -60,6 +68,7 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
     @Override
     public void setDimensions(PVector newDimensions) {
         animatedPiece.setDimensions(newDimensions);
+        this.dimensions.set(newDimensions);
     }
 
     @Override

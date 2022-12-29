@@ -13,31 +13,45 @@ public class AnimationManager {
     private final LinkedList<Integer> durations;  
     private int millisStart;
     private boolean animating;
+    private boolean buffered;
 
     private final TransformData lerpTransformData;
-    private final PVector lerpPVector;
+    private final PVector lerpDimensions;
 
     public AnimationManager(TransformData initTransform, PVector initDimensions) {
         transformSequence = new LinkedList<TransformData>();
         dimensionSequence = new LinkedList<PVector>();
         durations = new LinkedList<Integer>();
         lerpTransformData = new TransformData();
-        lerpPVector = new PVector();
+        lerpDimensions = new PVector();
         baseTransform = new TransformData(initTransform);
         baseDimensions = new PVector(initDimensions.x, initDimensions.y, initDimensions.z);
         animating = false;
+        buffered = true;
     }
 
     // Adds an animation step, and starts animating if necessary
     public void enqueueAnimation(TransformData transform, PVector dimensions, int millisDuration) {
         if (!animating) {
             animating = true;
+            buffered = false;
             millisStart = Main.TIME_KEEPER.millis();
         }
 
-        transformSequence.add(transform);
-        dimensionSequence.add(dimensions);
+        transformSequence.add(transform == null ? (transformSequence.size() > 0 ? transformSequence.getFirst() : baseTransform) : transform);
+        dimensionSequence.add(dimensions == null ? (dimensionSequence.size() > 0 ? dimensionSequence.getFirst() : baseDimensions) : dimensions);
         durations.add(millisDuration);
+    }
+
+    public void set(Drawable drawable) {
+        if (animating) {
+            drawable.setTransform(this.currentTransform());
+            drawable.setDimensions(this.currentDimensions());
+        } else if (!buffered) {
+            drawable.setTransform(this.currentTransform());
+            drawable.setDimensions(this.currentDimensions());
+            buffered = true;
+        }
     }
 
     // Skips through all the animations and sets transform and dimensions to those found in the last step
@@ -92,11 +106,11 @@ public class AnimationManager {
         if (!animating) {
             return baseDimensions;
         } else {
-            float frac = (Main.TIME_KEEPER.millis() - millisStart) / this.durations.getFirst();
-            lerpPVector.set(frac*(this.dimensionSequence.getFirst().x - this.baseDimensions.x) + baseDimensions.x,
+            float frac = (float)(Main.TIME_KEEPER.millis() - millisStart) / this.durations.getFirst();
+            lerpDimensions.set(frac*(this.dimensionSequence.getFirst().x - this.baseDimensions.x) + baseDimensions.x,
                             frac*(this.dimensionSequence.getFirst().y - this.baseDimensions.y) + baseDimensions.y,
                             frac*(this.dimensionSequence.getFirst().z - this.baseDimensions.z) + baseDimensions.z);
-            return lerpPVector;
+            return lerpDimensions;
         }
     }
 

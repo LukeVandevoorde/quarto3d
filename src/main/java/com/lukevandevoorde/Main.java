@@ -79,12 +79,15 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
             }
 
             public void onReject() {
-                onAccept();
+                quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
+                quartoBoard.skipAnimation();
+                quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
 
             public void onAccept() {
                 quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
                 quartoBoard.skipAnimation();
+                quartoBoard.hold(225);
                 quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
             }
         };
@@ -232,6 +235,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
             userView.setRotX(min(0, max(userView.getRotX() + 0.01f*(this.mouseY - this.pmouseY), -HALF_PI)));
             userView.setRotZ(((userView.getRotZ() + (0.01f) * drag.cross(arm).z / arm.mag()) % TWO_PI + TWO_PI) % TWO_PI);
+            quartoBoard.animate(null, null, 0);
         }
     }
 }

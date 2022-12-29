@@ -14,7 +14,7 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
     private static final float EDGE_PADDING_BIAS = 1.25f;
 
     private QuartoBoard quartoBoard;
-    private PieceDrawable[] pieces;
+    private Drawable[] pieces;
     private float pieceWidth, interiorPadding, edgePadding;
 
     // used to id spot under hovering PieceDraggable for highlighting
@@ -22,9 +22,11 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
 
     public BoardDrawable(Viewport viewport, TransformData transform, PVector dimensions, QuartoBoard quartoBoard) {
         super(viewport, transform, dimensions);
+        pieces = new Drawable[16];
+        setDimensions(dimensions);
         this.quartoBoard = quartoBoard;
         hoverIndex = -1;
-        pieces = new PieceDrawable[16];
+        
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 if (quartoBoard.pieceAt(i, j)) {
@@ -51,17 +53,30 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
 
     @Override
     public boolean accept(Draggable<PieceDraggable> draggable) {
-        if (hoverIndex < 0) {
-            return false;
-        }
-        boolean accepted = quartoBoard.placePiece(hoverIndex/4, hoverIndex%4, draggable.getPayload().getPiece());
-        if (accepted) {
-            pieces[hoverIndex] = new PieceDrawable(viewport, new TransformData(),
-                                                    new PVector(pieceWidth, pieceWidth, dimensions.z),
-                                                    quartoBoard.getPiece(hoverIndex/4, hoverIndex%4));
-        }
+        if (hoverIndex < 0) return false;
+
+        quartoBoard.placePiece(hoverIndex%4, hoverIndex/4, draggable.getPayload().getPiece());
+        
+        PVector posDiff = this.boardPos(hoverIndex%4, hoverIndex/4);
+        posDiff.rotate(-this.transform.getRotZ());
+        posDiff.x += this.transform.getX();
+        posDiff.y += this.transform.getY();
+
+        PieceDraggable pd = draggable.getPayload();
+        TransformData pos = pd.currentTransform();
+
+        posDiff.x = pos.getX() - posDiff.x;
+        posDiff.y = pos.getY() - posDiff.y;
+        posDiff.rotate(this.transform.getRotZ());
+        posDiff.z = pos.getZ() - pd.getDimensions().z/2 - this.transform.getZ();
+
+        TransformData diff = new TransformData(posDiff, pos.getRotation());
+        AnimatedDrawable ad = new AnimatedDrawable(new PieceDrawable(viewport, diff, pd.getDimensions(), quartoBoard.getPiece(hoverIndex%4, hoverIndex/4)));
+        ad.animate(new TransformData(), new PVector(pieceWidth, pieceWidth, dimensions.z), 175);
+        pieces[hoverIndex] = ad;
+        
         hoverIndex = -1;
-        return accepted;
+        return true;
     }
     
     @Override
@@ -93,7 +108,7 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
 
     @Override
     public void setDimensions(PVector newDimensions) {
-        dimensions.x = Math.min(dimensions.x, dimensions.y);
+        dimensions.x = Math.min(newDimensions.x, newDimensions.y);
         dimensions.y = dimensions.x;
         this.pieceWidth = dimensions.x * PIECE_WIDTH_PROPORTION;
         this.interiorPadding = dimensions.x * (1 - 4 * PIECE_WIDTH_PROPORTION) / (3 + 2 * EDGE_PADDING_BIAS);
@@ -101,7 +116,12 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
 
         for (int i = 0; i < 16; i++) {
             if (pieces[i] != null) {
-                pieces[i].setDimensions(new PVector(pieceWidth, pieceWidth, newDimensions.z));
+                if (pieces[i] instanceof AnimatedDrawable) {
+                    AnimatedDrawable ad = (AnimatedDrawable)pieces[i];
+                    ad.animate(null, new PVector(pieceWidth, pieceWidth, newDimensions.z), -1);
+                } else {
+                    pieces[i].setDimensions(new PVector(pieceWidth, pieceWidth, newDimensions.z));
+                }
             }
         }
     }
@@ -122,14 +142,20 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                if (hoverIndex == 4*i+j) graphics.fill(25, 240, 30);
-                else graphics.fill(120, 110, 100);
-                
+                if (hoverIndex == 4*i+j) {
+                    graphics.fill(25, 240, 30);
+                } else {
+                    graphics.fill(120, 110, 100);
+                }
                 graphics.ellipse(0, 0, 1.5f*pieceWidth, 1.5f*pieceWidth);
-                if (pieces[4*i+j] != null) {
-                    graphics.translate(0, 0, pieces[4*i+j].getHeight()/2);
-                    pieces[4*i+j].draw();
-                    graphics.translate(0, 0, -pieces[4*i+j].getHeight()/2);
+                Drawable piece = pieces[4*i+j];
+                if (piece != null) {
+                    // TODO: this push/pop shouldn't be necessary... without it, remaining base ellipses turn black though
+                    graphics.push();
+                    graphics.translate(0, 0, piece.getHeight()/2);
+                    piece.draw();
+                    graphics.translate(0, 0, -piece.getHeight()/2);
+                    graphics.pop();
                 }
                 graphics.translate(interiorPadding + pieceWidth, 0, 0);
             }
@@ -138,5 +164,11 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
 
         graphics.popMatrix();
         graphics.popStyle();
+    }
+
+    private PVector boardPos(int x, int y) {
+        PVector res = new PVector(edgePadding + pieceWidth/2 - dimensions.x/2, edgePadding + pieceWidth/2 - dimensions.x/2, 1);
+        res = res.add(x*(interiorPadding + pieceWidth), y*(interiorPadding + pieceWidth));
+        return res;
     }
 }
