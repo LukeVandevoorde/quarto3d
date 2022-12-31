@@ -6,33 +6,36 @@ import processing.core.PVector;
 import com.lukevandevoorde.Main;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
-import com.lukevandevoorde.quartolayer.QuartoBoard;
+import com.lukevandevoorde.quartolayer.QuartoBoardState;
+import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable> {
     
     private static final float PIECE_WIDTH_PROPORTION = 0.14f;
     private static final float EDGE_PADDING_BIAS = 1.25f;
 
-    private QuartoBoard quartoBoard;
     private Drawable[] pieces;
     private float pieceWidth, interiorPadding, edgePadding;
 
     // used to id spot under hovering PieceDraggable for highlighting
     private int hoverIndex;
 
-    public BoardDrawable(Viewport viewport, TransformData transform, PVector dimensions, QuartoBoard quartoBoard) {
+    private int lastPlacementRow, lastPlacementCol;
+    private QuartoPiece lastPlacementPiece;
+    private UIPlayer notify;
+
+    public BoardDrawable(Viewport viewport, TransformData transform, PVector dimensions, QuartoBoardState initialState) {
         super(viewport, transform, dimensions);
         pieces = new Drawable[16];
         setDimensions(dimensions);
-        this.quartoBoard = quartoBoard;
         hoverIndex = -1;
-        
+
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                if (quartoBoard.pieceAt(i, j)) {
+                if (initialState.pieceAt(i, j)) {
                     pieces[4*i+j] = new PieceDrawable(viewport, new TransformData(),
                         new PVector(pieceWidth, pieceWidth, dimensions.z),
-                        quartoBoard.getPiece(i, j));
+                        initialState.getPiece(i, j));
                 }
             }
         }
@@ -42,8 +45,16 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         return new PVector(width, height, Math.min(width, height) * PIECE_WIDTH_PROPORTION * PieceDrawable.HEIGHT_TO_WIDTH_RATIO);
     }
 
-    public QuartoBoard getQuartoBoard() {
-        return this.quartoBoard;
+    public void requestNotification(UIPlayer player) {
+        this.notify = player;
+    }
+
+    public int[] getLastPlacementPosition() {
+        return new int[]{this.lastPlacementRow, this.lastPlacementCol};
+    }
+
+    public QuartoPiece getLastPlacementPiece() {
+        return this.lastPlacementPiece;
     }
 
     @Override
@@ -54,8 +65,6 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
     @Override
     public boolean accept(Draggable<PieceDraggable> draggable) {
         if (hoverIndex < 0) return false;
-
-        quartoBoard.placePiece(hoverIndex%4, hoverIndex/4, draggable.getPayload().getPiece());
         
         PVector posDiff = this.boardPos(hoverIndex%4, hoverIndex/4);
         posDiff.rotate(-this.transform.getRotZ());
@@ -71,10 +80,12 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         posDiff.z = pos.getZ() - pd.getDimensions().z/2 - this.transform.getZ();
 
         TransformData diff = new TransformData(posDiff, pos.getRotation());
-        AnimatedDrawable ad = new AnimatedDrawable(new PieceDrawable(viewport, diff, pd.getDimensions(), quartoBoard.getPiece(hoverIndex%4, hoverIndex/4)));
+        AnimatedDrawable ad = new AnimatedDrawable(new PieceDrawable(viewport, diff, pd.getDimensions(), draggable.getPayload().getPiece()));
         ad.animate(new TransformData(), new PVector(pieceWidth, pieceWidth, dimensions.z), 175);
         pieces[hoverIndex] = ad;
         
+        if (this.notify != null) notify.notifyPlacement(hoverIndex/4, hoverIndex%4, draggable.getPayload().getPiece());
+
         hoverIndex = -1;
         return true;
     }

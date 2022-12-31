@@ -1,8 +1,11 @@
 package com.lukevandevoorde.classes;
 
+import java.util.function.Function;
+
 import com.lukevandevoorde.Main;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
+import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 import processing.core.PGraphics;
 import processing.core.PVector;
@@ -11,14 +14,48 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<PieceDra
     
     private PieceDraggable drag;
     private DragTarget<PieceDraggable> board;
-    private Draggable.CallBack dCallBack;
+    private Draggable.CallBack boardPlaceCallback;
     private boolean occupied;
+
+    private boolean dropEnabled, removalEnabled;
+    private UIPlayer notify;
 
     public PieceOfferingHolder(Viewport viewport, TransformData transform, PVector dimensions, DragTarget<PieceDraggable> board, Draggable.CallBack boardPlaceCallback) {
         super(viewport, transform, dimensions);
         this.board = board;
-        this.dCallBack = boardPlaceCallback;
-        occupied = false;
+        this.boardPlaceCallback = boardPlaceCallback;
+        this.occupied = false;
+        this.dropEnabled = false;
+        this.removalEnabled = false;
+    }
+
+    public QuartoPiece getQuartoPiece() {
+        if (!occupied) return null;
+
+        return this.drag.getPiece();
+    }
+
+    // Will notify player when a piece is dropped into this holder
+    public void requestNotification(UIPlayer player) {
+        this.notify = player;
+    }
+
+    public void enableDrop() {
+        this.dropEnabled = true;
+    }
+
+    public void disableDrop() {
+        this.dropEnabled = false;
+    }
+
+    public void enableRemoval() {
+        this.removalEnabled = true;
+        if (this.drag != null) Main.MOUSE_COORDINATOR.add(drag);
+    }
+
+    public void disableRemoval() {
+        this.removalEnabled = false;
+        if (this.drag != null) Main.MOUSE_COORDINATOR.remove(drag);
     }
 
     @Override
@@ -54,7 +91,7 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<PieceDra
 
     @Override
     public boolean willAccept(Draggable<PieceDraggable> draggable) {
-        return !occupied && mouseHover(Main.MOUSE_COORDINATOR.getMouseX(), Main.MOUSE_COORDINATOR.getMouseY());
+        return !occupied && dropEnabled && mouseHover(Main.MOUSE_COORDINATOR.getMouseX(), Main.MOUSE_COORDINATOR.getMouseY());
     }
 
     @Override
@@ -72,11 +109,13 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<PieceDra
             }
         };
         
-        Main.MOUSE_COORDINATOR.add(this.drag);
+        if (removalEnabled) Main.MOUSE_COORDINATOR.add(this.drag);
         this.drag.addTarget(board);
-        this.drag.addCallback(dCallBack);
+        this.drag.addCallback(boardPlaceCallback);
         this.drag.addCallback(removeCallBack);
         
+        if (this.notify != null) notify.notifyOffering(this.drag.getPiece());
+
         return true;
     }
 }

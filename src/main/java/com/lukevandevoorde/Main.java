@@ -11,10 +11,13 @@ import java.util.stream.Collectors;
 
 import com.lukevandevoorde.classes.AnimatedDrawable;
 import com.lukevandevoorde.classes.BoardDrawable;
+import com.lukevandevoorde.classes.GameFlowManager;
 import com.lukevandevoorde.classes.PieceBank;
 import com.lukevandevoorde.classes.PieceDraggable;
 import com.lukevandevoorde.classes.PieceOfferingHolder;
+import com.lukevandevoorde.classes.Player;
 import com.lukevandevoorde.classes.TransformData;
+import com.lukevandevoorde.classes.UIPlayer;
 import com.lukevandevoorde.classes.Viewport;
 import com.lukevandevoorde.interfaces.Clickable;
 import com.lukevandevoorde.interfaces.Draggable;
@@ -41,6 +44,8 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     private Draggable<?> selectedDraggable;
     private boolean dragging;
 
+    private GameFlowManager gameManager;
+
     public static void main(String[] args) {
         PApplet.main("com.lukevandevoorde.Main");
     }
@@ -66,7 +71,9 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         // selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/6), new PVector(0, 0, 0));
         // selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, 0), new PVector(0, 0, 0));
 
-        BoardDrawable qb = new BoardDrawable(boardViewport, selectView, BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()), new Board());
+        gameManager = new GameFlowManager();
+
+        BoardDrawable qb = new BoardDrawable(boardViewport, selectView, BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()), gameManager.getQuartoBoardState());
         quartoBoard = new AnimatedDrawable(qb);
         quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 1500);
 
@@ -103,13 +110,18 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
                                                         qb,
                                                         placingCallback);
         
+        Player p1 = new UIPlayer(qb, p1PieceOfferingHolder, p2PieceOfferingHolder);
+        Player p2 = new UIPlayer(qb, p2PieceOfferingHolder, p1PieceOfferingHolder);
+        gameManager.registerPlayer(p1, GameFlowManager.P1);
+        gameManager.registerPlayer(p2, GameFlowManager.P2);
+        
         DragTarget<PieceDraggable>[] holders = new PieceOfferingHolder[]{p1PieceOfferingHolder, p2PieceOfferingHolder};
 
         // Pieces without holes
         leftPieceBank = new PieceBank(boardViewport,
                                         new TransformData(new PVector(0, 0, selectView.getZ() + BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()).z), new PVector()), 
                                         new PVector(boardViewport.width()/4, 0.8f*boardViewport.height()),
-                                        qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> p.getFilled()).collect(Collectors.toSet()),
+                                        gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> p.getFilled()).collect(Collectors.toSet()),
                                         Arrays.asList(holders)
                                         );
 
@@ -117,8 +129,10 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         rightPieceBank = new PieceBank(boardViewport,
                                         new TransformData(new PVector(3*boardViewport.width()/4, 0, 0), new PVector()),
                                         new PVector(boardViewport.width()/4, 0.8f*boardViewport.height()),
-                                        qb.getQuartoBoard().getRemainingPieces().stream().filter(p -> !p.getFilled()).collect(Collectors.toSet()),
+                                        gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> !p.getFilled()).collect(Collectors.toSet()),
                                         Arrays.asList(holders));
+        
+        gameManager.startGame();
     }
 
     public void draw() {        
@@ -132,7 +146,6 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         boardView.smooth(4);
 
         quartoBoard.draw();
-
         p1PieceOfferingHolder.draw();
         p2PieceOfferingHolder.draw();
         leftPieceBank.draw();
@@ -187,6 +200,7 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         super.mouseWheel(e);
         int num = e.getCount();
         userView.setZ(max(min(userView.getZ() - num*height/20, 0), -2*height));
+        quartoBoard.animate(null, null, 0);
     }
 
     @Override

@@ -2,10 +2,10 @@ package com.lukevandevoorde;
 
 import java.util.HashSet;
 import java.util.Set;
-import com.lukevandevoorde.quartolayer.QuartoBoard;
+import com.lukevandevoorde.quartolayer.QuartoBoardState;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
-public class Board implements QuartoBoard {
+public class Board implements QuartoBoardState {
 
     private QuartoPiece[] qps;
     private HashSet<QuartoPiece> remainingPieces;
@@ -55,24 +55,23 @@ public class Board implements QuartoBoard {
         }
     }
 
-    @Override
-    public boolean placePiece(int x, int y, QuartoPiece piece) {
-        if (this.qps[4*x+y] != null) {
+    public boolean placePiece(int row, int col, QuartoPiece piece) {
+        if (this.qps[4*row+col] != null) {
             return false;
         }
 
-        this.qps[4*x+y] = piece;
+        this.qps[4*row+col] = piece;
         return true;
     }
 
     @Override
-    public boolean pieceAt(int x, int y) {
-        return qps[4*x+y] != null;
+    public boolean pieceAt(int row, int col) {
+        return qps[4*row+col] != null;
     }
 
     @Override
-    public QuartoPiece getPiece(int x, int y) {
-        return qps[4*x + y];
+    public QuartoPiece getPiece(int row, int col) {
+        return qps[4*row + col];
     }
 
     @Override
