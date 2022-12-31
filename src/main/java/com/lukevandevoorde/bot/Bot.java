@@ -1,8 +1,5 @@
 package com.lukevandevoorde.bot;
 
-import java.sql.Time;
-import java.util.concurrent.TimeoutException;
-
 public class Bot {
     
     private float timeLimit;
