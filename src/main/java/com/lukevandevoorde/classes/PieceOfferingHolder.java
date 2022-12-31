@@ -1,7 +1,5 @@
 package com.lukevandevoorde.classes;
 
-import java.util.function.Function;
-
 import com.lukevandevoorde.Main;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
