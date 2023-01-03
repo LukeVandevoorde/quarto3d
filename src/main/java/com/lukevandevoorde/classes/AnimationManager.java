@@ -30,6 +30,10 @@ public class AnimationManager {
         buffered = true;
     }
 
+    public boolean animating() {
+        return this.animating;
+    }
+
     // Adds an animation step, and starts animating if necessary
     public void enqueueAnimation(TransformData transform, PVector dimensions, int millisDuration) {
         if (!animating) {
@@ -38,8 +42,8 @@ public class AnimationManager {
             millisStart = Main.TIME_KEEPER.millis();
         }
 
-        transformSequence.add(transform == null ? (transformSequence.size() > 0 ? transformSequence.getFirst() : baseTransform) : transform);
-        dimensionSequence.add(dimensions == null ? (dimensionSequence.size() > 0 ? dimensionSequence.getFirst() : baseDimensions) : dimensions);
+        transformSequence.add(transform == null ? (transformSequence.size() > 0 ? transformSequence.getLast() : baseTransform) : new TransformData(transform));
+        dimensionSequence.add(dimensions == null ? (dimensionSequence.size() > 0 ? dimensionSequence.getLast() : baseDimensions) : new PVector(dimensions.x, dimensions.y, dimensions.z));
         durations.add(millisDuration);
     }
 
@@ -68,12 +72,14 @@ public class AnimationManager {
 
     public void flushSetTransform(TransformData transform) {
         flush();
-        baseTransform = transform;
+        baseTransform = new TransformData(transform);
+        buffered = false;
     }
 
     public void flushSetDimensions(PVector dimensions) {
         flush();
-        baseDimensions = dimensions;
+        baseDimensions = new PVector(dimensions.x, dimensions.y, dimensions.z);
+        buffered = false;
     }
 
     // If animating, returns the linearly interpolated transform based on the time through the current remaining animation steps.

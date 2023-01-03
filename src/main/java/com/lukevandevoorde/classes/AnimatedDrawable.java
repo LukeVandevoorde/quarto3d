@@ -12,6 +12,10 @@ public class AnimatedDrawable extends Drawable {
         this.drawable = drawable;
     }
 
+    public boolean animating() {
+        return animationManager.animating();
+    }
+
     @Override
     public void setDimensions(PVector newDimensions) {
         animationManager.flushSetDimensions(newDimensions);

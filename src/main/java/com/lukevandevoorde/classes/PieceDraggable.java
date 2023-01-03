@@ -28,7 +28,7 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         baseViewRotation = new TransformData(new PVector(), transform.getRotation());
         pieceRotationDragData = new TransformData();
 
-        positionManager = new AnimationManager(new TransformData(transform.getPosition(), new PVector()), dimensions);
+        positionManager = new AnimationManager(baseViewPosition, dimensions);
 
         PieceDrawable pieceDrawable = new PieceDrawable(graphics, baseViewRotation, dimensions, piece);
         animatedPiece = new AnimatedDrawable(pieceDrawable);
@@ -51,6 +51,18 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         return this.animatedPiece.getCurrentDimensions();
     }
 
+    public void returnToBase(int millis) {
+        animatedPiece.animate(animatedPiece.getCurrentTransform(), animatedPiece.getCurrentDimensions(), 0);
+        animatedPiece.skipAnimation();
+        animatedPiece.animate(baseViewRotation, dimensions, millis);
+        positionManager.enqueueAnimation(baseViewPosition, dimensions, millis);
+    }
+
+    @Override
+    public void setDimensions(PVector newDimensions) {
+        this.dimensions.set(newDimensions);
+    }
+    
     @Override
     public void setTransform(TransformData newTransform) {
         this.baseViewPosition.set(new TransformData(newTransform.getPosition(), new PVector()));
@@ -63,12 +75,6 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         positionManager.currentTransform().transform(viewport.getGraphics());
         animatedPiece.draw();
         viewport.getGraphics().popMatrix();
-    }
-
-    @Override
-    public void setDimensions(PVector newDimensions) {
-        animatedPiece.setDimensions(newDimensions);
-        this.dimensions.set(newDimensions);
     }
 
     @Override
@@ -135,10 +141,7 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
             }
         }
         
-        animatedPiece.animate(animatedPiece.getCurrentTransform(), animatedPiece.getCurrentDimensions(), 0);
-        animatedPiece.skipAnimation();
-        animatedPiece.animate(baseViewRotation, dimensions, 350);
-        positionManager.enqueueAnimation(baseViewPosition, dimensions, 350);
+        returnToBase(350);
     }
 
     @Override
@@ -151,12 +154,12 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         graphics.pushMatrix();
         positionManager.currentTransform().transform(graphics);
         
-        graphics.translate(0, 0, -animatedPiece.getHeight() / 4);
+        graphics.translate(0, -animatedPiece.getHeight() / 4, 0);
         test.x = graphics.screenX(0, 0, 0);
         test.y = graphics.screenY(0, 0, 0);
         hovering = hovering || m.dist(test) <= viewport.getScale(positionManager.currentTransform().getZ()) * animatedPiece.getWidth();
 
-        graphics.translate(0, 0, animatedPiece.getHeight() / 2);
+        graphics.translate(0, animatedPiece.getHeight() / 2, 0);
         test.x = graphics.screenX(0, 0, 0);
         test.y = graphics.screenY(0, 0, 0);
         hovering = hovering || m.dist(test) <= viewport.getScale(positionManager.currentTransform().getZ()) * animatedPiece.getWidth();

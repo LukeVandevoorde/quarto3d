@@ -8,6 +8,7 @@ import com.lukevandevoorde.quartolayer.QuartoPiece;
 public class PieceDrawable extends Drawable {
 
     public static final float HEIGHT_TO_WIDTH_RATIO = 2.5f;
+    public static final float SHORT_TO_TALL_HEIGHT_RATIO = 0.6f;
     private static final int VERTS = 100;
 
     protected QuartoPiece piece;
@@ -41,7 +42,7 @@ public class PieceDrawable extends Drawable {
         dimensions.x = Math.min(newDimensions.x, newDimensions.y);
         dimensions.y = dimensions.x;
         dimensions.z = newDimensions.z;
-        pieceHeight = piece.getTall() ? newDimensions.z : 3 * newDimensions.z / 5;
+        pieceHeight = piece.getTall() ? newDimensions.z : newDimensions.z * PieceDrawable.SHORT_TO_TALL_HEIGHT_RATIO;
         grooveHeightLow = piece.getTall() ? pieceHeight * 0.48f : pieceHeight * 0.8f;
         grooveHeightHigh = piece.getTall() ? pieceHeight * 0.5f : pieceHeight * 5/6;
         pitRadius = dimensions.x/3.5f;
@@ -57,8 +58,7 @@ public class PieceDrawable extends Drawable {
     // draws a piece with the base at the current center, with the top toward current +Z
     public void draw() {
         PGraphics graphics = this.viewport.getGraphics();
-        graphics.pushMatrix();
-        graphics.pushStyle();
+        graphics.push();
 
         transform.transform(graphics);
         graphics.translate(0, 0, -pieceHeight/2);
@@ -207,8 +207,7 @@ public class PieceDrawable extends Drawable {
             graphics.ellipse(0, 0, 2*radius, 2*radius);
         }
         
-        graphics.popMatrix();
-        graphics.popStyle();
+        graphics.pop();
     }
 
     private static void drawPit(PGraphics drawer, float radius, float depth, int verts) {

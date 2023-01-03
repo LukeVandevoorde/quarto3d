@@ -148,7 +148,7 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         graphics.noFill();
         graphics.stroke(0);
         graphics.fill(23);
-        graphics.rect(-dimensions.x/2, -dimensions.x/2, dimensions.x, dimensions.y);
+        graphics.rect(-dimensions.x/2, -dimensions.x/2, dimensions.x, dimensions.y, 0.05f*dimensions.x);
         graphics.translate(edgePadding + pieceWidth/2 - dimensions.x/2, edgePadding + pieceWidth/2 - dimensions.x/2, 1);
         
         for (int i = 0; i < 4; i++) {
