@@ -1,8 +1,10 @@
 package com.lukevandevoorde.bot;
 
+import com.lukevandevoorde.quartolayer.QuartoPiece;
+
 public class Main {
     public static void main(String[] args) {
-        byte b = QB.piece(false, false, false, false);
+        byte b = QuartoPiece.quartoPiece(false, false, false, false);
         System.out.println(b);
         // testIterTimes();
     }

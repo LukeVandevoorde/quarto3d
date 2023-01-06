@@ -5,15 +5,16 @@ import processing.core.PGraphics;
 import processing.core.PVector;
 import processing.event.MouseEvent;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.PriorityQueue;
 import java.util.stream.Collectors;
 
-import com.lukevandevoorde.classes.AnimatedDrawable;
 import com.lukevandevoorde.classes.BoardDrawable;
+import com.lukevandevoorde.classes.ComputerPlayer;
 import com.lukevandevoorde.classes.GameFlowManager;
 import com.lukevandevoorde.classes.PieceBank;
-import com.lukevandevoorde.classes.PieceDraggable;
 import com.lukevandevoorde.classes.PieceOfferingHolder;
 import com.lukevandevoorde.classes.Player;
 import com.lukevandevoorde.classes.TransformData;
@@ -22,27 +23,47 @@ import com.lukevandevoorde.classes.Viewport;
 import com.lukevandevoorde.interfaces.Clickable;
 import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.interfaces.DragTarget;
-import com.lukevandevoorde.interfaces.Hoverable;
-import com.lukevandevoorde.interfaces.MouseCoordinator;
+import com.lukevandevoorde.interfaces.UICoordinator;
+import com.lukevandevoorde.quartolayer.QuartoPiece;
+import com.lukevandevoorde.interfaces.MouseInteractable;
 import com.lukevandevoorde.interfaces.TimeKeeper;
 
-public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
+public class Main extends PApplet implements UICoordinator, TimeKeeper {
+
+    private class ComparableJob implements Comparable<ComparableJob> {
+        TimeKeeper.Job job;
+        int executionTime;
+
+        public ComparableJob(int executionTime, TimeKeeper.Job job) {
+            this.job = job;
+            this.executionTime = executionTime;
+        }
+
+        public int compareTo(ComparableJob o) {
+            return this.executionTime - o.executionTime;
+        }
+    }
+
+    private static final int DOUBLE_CLICK_TIME = 225;
 
     public static TimeKeeper TIME_KEEPER;
-    public static MouseCoordinator MOUSE_COORDINATOR;
+    public static UICoordinator UI_COORDINATOR;
+
+    private PriorityQueue<ComparableJob> jobs;
 
     private Viewport boardViewport;
-    private AnimatedDrawable quartoBoard;
+    private BoardDrawable quartoBoard;
     private PieceBank leftPieceBank, rightPieceBank;
     private PieceOfferingHolder p1PieceOfferingHolder, p2PieceOfferingHolder;
     private TransformData userView, selectView;
+    private PVector hintPos;
 
-    private HashSet<Hoverable> hoverables;
-    private HashSet<Clickable> clickables;
+    private ArrayList<Clickable> clickables;
     private Clickable selectedClickable;
-    private HashSet<Draggable<?>> draggables;
+    private ArrayList<Draggable<?>> draggables;
     private Draggable<?> selectedDraggable;
-    private boolean dragging;
+    private int minPriority, maxPriority;
+    private boolean dragging, clickedAndWaitingForDoubleClick, mouseMovedSinceClicked;
 
     private GameFlowManager gameManager;
 
@@ -52,11 +73,15 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
     public Main() {
         TIME_KEEPER = this;
-        MOUSE_COORDINATOR = this;
+        UI_COORDINATOR = this;
+        minPriority = Integer.MIN_VALUE;
+        maxPriority = Integer.MAX_VALUE;
         dragging = false;
-        draggables = new HashSet<Draggable<?>>();
-        hoverables = new HashSet<Hoverable>();
-        clickables = new HashSet<Clickable>();
+        clickedAndWaitingForDoubleClick = false;
+        mouseMovedSinceClicked = false;
+        jobs = new PriorityQueue<>();
+        draggables = new ArrayList<Draggable<?>>();
+        clickables = new ArrayList<Clickable>();
     }
 
     public void settings() {
@@ -65,71 +90,52 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     }
 
     public void setup() {
-        boardViewport = new Viewport(createGraphics(width, height, P3D), new PVector(0, 0), PI*0.28f);
+        boardViewport = new Viewport(createGraphics(width, height, P3D), new PVector(0, 0), 0.26f*PI);
         userView = new TransformData(new PVector(boardViewport.width()/2, 3*boardViewport.height()/5, -boardViewport.height()/2), new PVector(-THIRD_PI, 0, 0));
         selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/2), new PVector(0, 0, 0));
-        // selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/6), new PVector(0, 0, 0));
-        // selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, 0), new PVector(0, 0, 0));
 
         gameManager = new GameFlowManager();
 
         float holderHeightFrac = 0.3f;
         float widthFrac = 0.15f;
 
-        BoardDrawable qb = new BoardDrawable(boardViewport, selectView, BoardDrawable.recommendedDimensions((1-widthFrac)*boardViewport.width(), boardViewport.height()), gameManager.getQuartoBoardState());
-        quartoBoard = new AnimatedDrawable(qb);
-        quartoBoard.animate(userView, null, 1500);
+        quartoBoard = new BoardDrawable(boardViewport, userView, selectView, BoardDrawable.recommendedDimensions((1-widthFrac)*boardViewport.width(), boardViewport.height()), gameManager.getQuartoBoardState());
+        gameManager.registerBoardDrawable(quartoBoard);
 
+        // Accept taken care of by GameFlowManager
         Draggable.CallBack placingCallback = new Draggable.CallBack() {
             public void onStartDrag() {
-                selectView.setRotZ(((int)((userView.getRotZ()) / HALF_PI + 0.5f)) * HALF_PI);
-                quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
-                quartoBoard.skipAnimation();
-                quartoBoard.animate(selectView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
+                quartoBoard.enterSelectView();
             }
 
             public void onReject() {
-                quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
-                quartoBoard.skipAnimation();
-                quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
-            }
-
-            public void onAccept() {
-                quartoBoard.animate(quartoBoard.getCurrentTransform(), quartoBoard.getCurrentDimensions(), 0);
-                quartoBoard.skipAnimation();
-                quartoBoard.hold(225);
-                quartoBoard.animate(userView, BoardDrawable.recommendedDimensions(boardViewport.width()/2, boardViewport.height()), 350);
+                quartoBoard.enterUserView();
             }
         };
 
         p1PieceOfferingHolder = new PieceOfferingHolder(boardViewport,
                                                         new TransformData(new PVector(0, (1-holderHeightFrac)*boardViewport.height()), new PVector()),
                                                         new PVector(widthFrac*boardViewport.width(), holderHeightFrac*boardViewport.height()),
-                                                        qb,
-                                                        placingCallback,
-                                                        true);
+                                                        quartoBoard, placingCallback,true,"P1");
         p2PieceOfferingHolder = new PieceOfferingHolder(boardViewport,
                                                         new TransformData(new PVector((1-widthFrac)*boardViewport.width(), (1-holderHeightFrac)*boardViewport.height()), new PVector()),
                                                         new PVector(widthFrac*boardViewport.width(), holderHeightFrac*boardViewport.height()),
-                                                        qb,
-                                                        placingCallback,
-                                                        false);
+                                                        quartoBoard, placingCallback,false,"P2");
         
-        Player p1 = new UIPlayer(qb, p1PieceOfferingHolder, p2PieceOfferingHolder);
-        Player p2 = new UIPlayer(qb, p2PieceOfferingHolder, p1PieceOfferingHolder);
+        Player p1 = new UIPlayer(quartoBoard, p1PieceOfferingHolder, p2PieceOfferingHolder);
+        // Player p2 = new UIPlayer(quartoBoard, p2PieceOfferingHolder, p1PieceOfferingHolder);
+        Player p2 = new ComputerPlayer();
         gameManager.registerPlayer(p1, GameFlowManager.P1);
         gameManager.registerPlayer(p2, GameFlowManager.P2);
         
-        DragTarget<PieceDraggable>[] holders = new PieceOfferingHolder[]{p1PieceOfferingHolder, p2PieceOfferingHolder};
+        DragTarget<QuartoPiece>[] holders = new PieceOfferingHolder[]{p1PieceOfferingHolder, p2PieceOfferingHolder};
 
         // Pieces without holes
         leftPieceBank = new PieceBank(boardViewport,
-                                        // new TransformData(new PVector(0, 0, selectView.getZ() + BoardDrawable.recommendedDimensions(boardViewport.width(), boardViewport.height()).z), new PVector()), 
                                         new TransformData(new PVector(), new PVector()), 
                                         new PVector(widthFrac*boardViewport.width(), (1-holderHeightFrac)*boardViewport.height()),
                                         gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> p.getFilled()).collect(Collectors.toSet()),
-                                        Arrays.asList(holders)
-                                        );
+                                        Arrays.asList(holders));
 
         // Pieces with holes
         rightPieceBank = new PieceBank(boardViewport,
@@ -137,11 +143,28 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
                                         new PVector(widthFrac*boardViewport.width(), (1-holderHeightFrac)*boardViewport.height()),
                                         gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> !p.getFilled()).collect(Collectors.toSet()),
                                         Arrays.asList(holders));
-        
+
+        HashSet<PieceBank> banks = new HashSet<>();
+        banks.add(leftPieceBank);
+        banks.add(rightPieceBank);
+        gameManager.registerPieceBanks(banks);
+        gameManager.registerPieceOfferingHolder(p1PieceOfferingHolder, GameFlowManager.P1);
+        gameManager.registerPieceOfferingHolder(p2PieceOfferingHolder, GameFlowManager.P2);
         gameManager.startGame();
+
+        PGraphics g = boardViewport.getGraphics();
+
+        g.textAlign(LEFT);
+        float size = g.height/30;
+        g.textSize(size);
+        hintPos = new PVector(g.width*widthFrac, size);
     }
 
-    public void draw() {        
+    public void draw() {
+        while (!jobs.isEmpty() && jobs.peek().executionTime <= this.millis()) {
+            jobs.poll().job.execute();
+        }
+
         background(255);
         
         PGraphics boardView = boardViewport.getGraphics();
@@ -150,6 +173,8 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         boardView.fill(0);
         boardView.lights();
         boardView.smooth(4);
+
+        boardView.text(gameManager.getUIHint(), hintPos.x, hintPos.y);
 
         quartoBoard.draw();
         p1PieceOfferingHolder.draw();
@@ -161,34 +186,42 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
         image(boardView, boardViewport.getPosition().x, boardViewport.getPosition().y);
     }
 
-    @Override
-    public void add(Draggable<?> draggable) {
-        draggables.add(draggable);
+    public void scheduleJob(int millisUntilExecution, TimeKeeper.Job job) {
+        this.jobs.add(new ComparableJob(this.millis() + millisUntilExecution, job));
     }
 
     @Override
-    public void add(Hoverable hoverable) {
-        hoverables.add(hoverable);
+    public void setMinPriority(int priority) {
+        this.minPriority = priority;
     }
 
     @Override
-    public void add(Clickable clickable) {
-        clickables.add(clickable);
+    public void setMaxPriority(int priority) {
+        this.maxPriority = priority;
     }
 
     @Override
-    public void remove(Draggable<?> draggable) {
-        draggables.remove(draggable);
+    public void add(MouseInteractable element) {
+        if (element instanceof Draggable) {
+            Draggable<?> d = (Draggable<?>) element;
+            if (!draggables.contains(d)) {
+                draggables.add(d);
+                draggables.sort(null);
+            }
+        }
+        if (element instanceof Clickable) {
+            Clickable c = (Clickable) element;
+            if (!clickables.contains(c)) {
+                clickables.add(c);
+                clickables.sort(null);
+            }
+        }
     }
 
     @Override
-    public void remove(Hoverable hoverable) {
-        hoverables.remove(hoverable);
-    }
-
-    @Override
-    public void remove(Clickable clickable) {
-        clickables.remove(clickable);
+    public void remove(MouseInteractable element) {
+        if (element instanceof Draggable) draggables.remove((Draggable<?>) element);
+        if (element instanceof Clickable) clickables.remove((Clickable) element);
     }
 
     @Override
@@ -202,29 +235,40 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
     }
 
     @Override
+    public int getPrevMouseX() {
+        return this.pmouseX;
+    }
+
+    @Override
+    public int getPrevMouseY() {
+        return this.pmouseY;
+    }
+
+    @Override
     public void mouseWheel(MouseEvent e) {
         super.mouseWheel(e);
-        int num = e.getCount();
-        userView.setZ(max(min(userView.getZ() - num*height/20, 0), -2*height));
-        quartoBoard.animate(userView, null, 0);
+        quartoBoard.adjustDistance(e.getCount());
     }
 
     @Override
     public void mousePressed() {
-        dragging = false;
+        super.mousePressed();
+        mouseMovedSinceClicked = false;
 
-        for (Clickable c: clickables) {
-            if (c.mouseHover(mouseX, mouseY)) {
+        for (int i = clickables.size() - 1; i >= 0; i--) {
+            Clickable c = clickables.get(i);
+            if (c.priority() > maxPriority) continue;
+            if (c.priority() >= minPriority && c.mouseOver()) {
                 selectedClickable = c;
                 break;
             }
         }
 
-        for (Draggable<?> d: draggables) {
-            if (d.mouseHover(mouseX, mouseY)) {
+        for (int i = draggables.size() - 1; i >= 0; i--) {
+            Draggable<?> d = draggables.get(i);
+            if (d.priority() > maxPriority) continue;
+            if (d.priority() >= minPriority && d.mouseOver()) {
                 selectedDraggable = d;
-                dragging = true;
-                d.startDrag();
                 break;
             }
         }
@@ -232,30 +276,49 @@ public class Main extends PApplet implements MouseCoordinator, TimeKeeper {
 
     @Override
     public void mouseReleased() {
-        if (dragging && selectedDraggable != null) { // Drag complete
-            dragging = false;
+        super.mouseReleased();
+        if (dragging && selectedDraggable != null) {
             selectedDraggable.endDrag();
-        } else if (selectedClickable != null) {    // Click complete
-            selectedClickable.onClick();
+        } else if (selectedClickable != null) {
+            if (clickedAndWaitingForDoubleClick && !mouseMovedSinceClicked) {
+                clickedAndWaitingForDoubleClick = false;
+                selectedClickable.onDoubleClick();
+            } else {
+                clickedAndWaitingForDoubleClick = true;
+
+                TimeKeeper.Job registerClick = new Job() {
+                    public void execute() {
+                        if (clickedAndWaitingForDoubleClick) {
+                            selectedClickable.onClick();
+                            selectedClickable = null;
+                            clickedAndWaitingForDoubleClick = false;
+                        }
+                    }
+                };
+
+                this.scheduleJob(DOUBLE_CLICK_TIME, registerClick);
+            }
         }
+        dragging = false;
+        selectedDraggable = null;
+    }
+
+    @Override
+    public void mouseMoved() {
+        super.mouseMoved();
+        mouseMovedSinceClicked = true;
     }
 
     @Override
     public void mouseDragged() {
         super.mouseDragged();
+        if (!dragging) {
+            dragging = true;
+            if (selectedDraggable != null) selectedDraggable.startDrag();
+        }
 
-        if (dragging) {
+        if (selectedDraggable != null) {
             selectedDraggable.update();
-        } else if (!quartoBoard.animating()) {
-            float centerX = boardViewport.getGraphics().screenX(userView.getX(), userView.getY(), userView.getZ()) + boardViewport.getPosition().x;
-            float centerY = boardViewport.getGraphics().screenY(userView.getX(), userView.getY(), userView.getZ()) + boardViewport.getPosition().y;
-
-            PVector arm = new PVector(pmouseX - centerX, pmouseY - centerY);
-            PVector drag = new PVector(mouseX - pmouseX, mouseY - pmouseY);
-
-            userView.setRotX(min(0, max(userView.getRotX() + 0.01f*(this.mouseY - this.pmouseY), -HALF_PI)));
-            userView.setRotZ(((userView.getRotZ() + (0.01f) * drag.cross(arm).z / arm.mag()) % TWO_PI + TWO_PI) % TWO_PI);
-            quartoBoard.animate(userView, null, 0);
         }
     }
 }

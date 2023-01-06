@@ -30,6 +30,13 @@ public class AnimationManager {
         buffered = true;
     }
 
+    public static int calcAnimationTime(int pixelsPerSecond, int radiansPerSecond, TransformData t1, TransformData t2) {
+        float dist = t1.getPosition().dist(t2.getPosition());
+        float maxAng = Math.max(Math.abs(t2.getRotX()-t1.getRotX()), Math.max(Math.abs(t2.getRotY()-t1.getRotY()), Math.abs(t2.getRotZ()-t1.getRotZ())));
+
+        return (int)(1000*Math.max(dist/pixelsPerSecond, maxAng/radiansPerSecond));
+    }
+
     public boolean animating() {
         return this.animating;
     }

@@ -56,10 +56,6 @@ public class AnimatedDrawable extends Drawable {
         return new PVector(curr.x, curr.y, curr.z);
     }
 
-    public void hold(int millisDuration) {
-        animationManager.enqueueAnimation(null, null, millisDuration);
-    }
-
     public void animate(TransformData t, PVector d, int millisDuration) {
         animationManager.enqueueAnimation(t, d, millisDuration);
     }

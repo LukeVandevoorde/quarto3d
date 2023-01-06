@@ -5,13 +5,13 @@ import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class UIPlayer extends Player {
     
-    private BoardDrawable bDrawable;
+    private BoardDrawable boardDrawable;
     private PieceOfferingHolder offerDropLocation;
     private PieceOfferingHolder offerReceivingLocation;
     private GameFlowManager manager;
 
-    public UIPlayer(BoardDrawable board, PieceOfferingHolder offerReceivingLocation, PieceOfferingHolder offerDropLocation) {
-        this.bDrawable = board;
+    public UIPlayer(BoardDrawable boardDrawable, PieceOfferingHolder offerReceivingLocation, PieceOfferingHolder offerDropLocation) {
+        this.boardDrawable = boardDrawable;
         this.offerReceivingLocation = offerReceivingLocation;
         this.offerDropLocation = offerDropLocation;
     }
@@ -20,12 +20,12 @@ public class UIPlayer extends Player {
     public void choosePlacement(GameFlowManager manager, QuartoBoardState board, QuartoPiece pieceToPlace) {
         this.manager = manager;
         this.offerReceivingLocation.enableRemoval();
-        bDrawable.requestNotification(this);
+        this.boardDrawable.requestNotification(this);
     }
 
     public void notifyPlacement(int row, int col, QuartoPiece piecePlaced) {
         this.offerReceivingLocation.disableRemoval();
-        this.manager.notifyPlacement(this, row, col, piecePlaced);
+        this.manager.notifyPlacement(this, piecePlaced, row, col);
     }
 
     @Override

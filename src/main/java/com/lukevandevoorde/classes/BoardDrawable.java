@@ -1,7 +1,10 @@
 package com.lukevandevoorde.classes;
 
+import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PVector;
+
+import java.util.HashSet;
 
 import com.lukevandevoorde.Main;
 import com.lukevandevoorde.interfaces.DragTarget;
@@ -9,26 +12,44 @@ import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.quartolayer.QuartoBoardState;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
-public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable> {
+public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarget<QuartoPiece> {
     
+    private static final int VIEW_SWITCH_MILLIS = 350;
+    private static final int PIECE_DROP_MILLIS = 200;
+
     private static final float PIECE_WIDTH_PROPORTION = 0.14f;
     private static final float EDGE_PADDING_BIAS = 1.25f;
 
     private Drawable[] pieces;
     private float pieceWidth, interiorPadding, edgePadding;
+    private AnimationManager manager;
+    private TransformData userView, selectView;
+    private int pieceDropStartTime;
+    private boolean inUserView;
 
-    // used to id spot under hovering PieceDraggable for highlighting
+    // highlight spot under hovering PieceDraggable to make placement obvious
     private int hoverIndex;
+    // highlight last placed piece
+    private int lastPlacementIndex;
+    // highlight pieces in winning rows
+    private HashSet<Integer> windices;
 
-    private int lastPlacementRow, lastPlacementCol;
     private QuartoPiece lastPlacementPiece;
     private UIPlayer notify;
 
-    public BoardDrawable(Viewport viewport, TransformData transform, PVector dimensions, QuartoBoardState initialState) {
-        super(viewport, transform, dimensions);
+    public BoardDrawable(Viewport viewport, TransformData userView, TransformData selectView, PVector dimensions, QuartoBoardState initialState) {
+        super(viewport, new TransformData(userView), new PVector(dimensions.x, dimensions.y, dimensions.z));
+        manager = new AnimationManager(userView, dimensions);
+
+        this.userView = userView;
+        this.selectView = selectView;
+        this.inUserView = true;
+        this.pieceDropStartTime = 0;
+
         pieces = new Drawable[16];
         setDimensions(dimensions);
         hoverIndex = -1;
+        lastPlacementIndex = -1;
 
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
@@ -39,6 +60,8 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
                 }
             }
         }
+
+        Main.UI_COORDINATOR.add(this);
     }
 
     public static PVector recommendedDimensions(float width, float height) {
@@ -49,50 +72,55 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         this.notify = player;
     }
 
-    public int[] getLastPlacementPosition() {
-        return new int[]{this.lastPlacementRow, this.lastPlacementCol};
-    }
-
     public QuartoPiece getLastPlacementPiece() {
         return this.lastPlacementPiece;
     }
 
-    @Override
-    public boolean willAccept(Draggable<PieceDraggable> draggable) {
-        return this.mouseHover(Main.MOUSE_COORDINATOR.getMouseX(), Main.MOUSE_COORDINATOR.getMouseY());
+    public void highlightWin(int[][] winningCoords) {
+        windices = new HashSet<>();
+        for (int i = 0; i < winningCoords[0].length; i++) {
+            windices.add(4*winningCoords[0][i] + winningCoords[1][i]);
+        }
+    }
+
+    public int enterSelectView() {
+        if (!inUserView) return 0;
+        inUserView = false;
+
+        selectView.setRotZ(((int)((transform.getRotZ()) / PConstants.HALF_PI + 0.5f)) * PConstants.HALF_PI);
+        TransformData ct = manager.currentTransform();
+        manager.enqueueAnimation(ct, manager.currentDimensions(), 0);
+        manager.flush();
+        int time = AnimationManager.calcAnimationTime(1000, 2, ct, selectView);
+        manager.enqueueAnimation(selectView, null, time);
+        return time;
+    }
+
+    public void adjustDistance(int amount) {
+        if (manager.animating()) return;
+        userView.setZ(Math.max(Math.min(userView.getZ() - amount*viewport.height()/20, 0), -2*viewport.height()));
+        manager.enqueueAnimation(userView, null, 0);
+    }
+
+    public int enterUserView() {
+        if (inUserView) return 0;
+        inUserView = true;
+
+        // Wait for dropped pieces to finish dropping
+        int diff = Main.TIME_KEEPER.millis() - (pieceDropStartTime + PIECE_DROP_MILLIS + 150);
+        if (diff < 0) manager.enqueueAnimation(selectView, null, -diff);
+
+        TransformData ct = manager.currentTransform();
+        manager.enqueueAnimation(ct, manager.currentDimensions(), 0);
+        manager.flush();
+        int time = AnimationManager.calcAnimationTime(1000, 2, ct, userView);
+        manager.enqueueAnimation(userView, null, time);
+        return time - Math.max(diff, 0);
     }
 
     @Override
-    public boolean accept(Draggable<PieceDraggable> draggable) {
-        if (hoverIndex < 0) return false;
-        
-        PVector posDiff = this.boardPos(hoverIndex%4, hoverIndex/4);
-        posDiff.rotate(-this.transform.getRotZ());
-        posDiff.x += this.transform.getX();
-        posDiff.y += this.transform.getY();
-
-        PieceDraggable pd = draggable.getPayload();
-        TransformData pos = pd.currentTransform();
-
-        posDiff.x = pos.getX() - posDiff.x;
-        posDiff.y = pos.getY() - posDiff.y;
-        posDiff.rotate(this.transform.getRotZ());
-        posDiff.z = pos.getZ() - pd.getDimensions().z/2 - this.transform.getZ();
-
-        TransformData diff = new TransformData(posDiff, pos.getRotation());
-        AnimatedDrawable ad = new AnimatedDrawable(new PieceDrawable(viewport, diff, pd.getDimensions(), draggable.getPayload().getPiece()));
-        ad.animate(new TransformData(), new PVector(pieceWidth, pieceWidth, dimensions.z), 175);
-        pieces[hoverIndex] = ad;
-        
-        if (this.notify != null) notify.notifyPlacement(hoverIndex/4, hoverIndex%4, draggable.getPayload().getPiece());
-
-        hoverIndex = -1;
-        return true;
-    }
-    
-    @Override
-    public boolean mouseHover(int mouseX, int mouseY) {
-        PVector m = viewport.getLocalPoint(new PVector(mouseX, mouseY));
+    public boolean willAccept(Draggable<QuartoPiece> draggable) {
+        PVector m = viewport.getLocalPoint(new PVector(Main.UI_COORDINATOR.getMouseX(), Main.UI_COORDINATOR.getMouseY()));
         PVector testPoint = new PVector();
         viewport.getGraphics().pushMatrix();
         transform.transform(viewport.getGraphics());
@@ -115,6 +143,45 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         hoverIndex = -1;
         viewport.getGraphics().popMatrix();
         return false;
+    }
+
+    @Override
+    public boolean accept(Draggable<QuartoPiece> draggable) {
+        if (hoverIndex < 0) return false;
+        
+        if (this.notify != null) notify.notifyPlacement(hoverIndex/4, hoverIndex%4, draggable.getPayload());
+        hoverIndex = -1;
+
+        return true;
+    }
+
+    public void handOff(PieceDraggable piece, int row, int col) {
+        PVector posDiff = this.boardPos(row, col);
+        posDiff.rotate(-this.transform.getRotZ());
+        posDiff.x += this.transform.getX();
+        posDiff.y += this.transform.getY();
+        
+        TransformData pos = piece.currentTransform();
+
+        posDiff.x = pos.getX() - posDiff.x;
+        posDiff.y = pos.getY() - posDiff.y;
+        posDiff.rotate(this.transform.getRotZ());
+        posDiff.z = pos.getZ() - piece.getDimensions().z/2 - this.transform.getZ();
+
+        TransformData diff = new TransformData(posDiff, pos.getRotation());
+        AnimatedDrawable ad = new AnimatedDrawable(new PieceDrawable(viewport, diff, piece.getDimensions(), piece.getPayload()));
+
+        Main.UI_COORDINATOR.remove(piece);
+
+        pieceDropStartTime = Main.TIME_KEEPER.millis();
+        ad.animate(new TransformData(), new PVector(pieceWidth, pieceWidth, dimensions.z), PIECE_DROP_MILLIS);
+        pieces[4*row+col] = ad;
+        lastPlacementIndex = 4*row+col;
+    }
+    
+    @Override
+    public boolean mouseOver() {
+        return true;
     }
 
     @Override
@@ -143,6 +210,7 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         graphics.pushMatrix();
         graphics.pushStyle();
 
+        manager.set(this);
         transform.transform(graphics);
 
         graphics.noFill();
@@ -153,8 +221,13 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                if (hoverIndex == 4*i+j) {
+                int index = 4*i+j;
+                if (index == hoverIndex) {
                     graphics.fill(25, 240, 30);
+                } else if (index == lastPlacementIndex) {
+                    graphics.fill(230, 220, 210);
+                } else if (windices != null && windices.contains(index)) {
+                    graphics.fill(79, 83, 196);
                 } else {
                     graphics.fill(120, 110, 100);
                 }
@@ -177,9 +250,46 @@ public class BoardDrawable extends Drawable implements DragTarget<PieceDraggable
         graphics.popStyle();
     }
 
-    private PVector boardPos(int x, int y) {
+    @Override
+    public void update() {
+        if (manager.animating() || !inUserView) return;
+
+        float centerX = viewport.getGraphics().screenX(userView.getX(), userView.getY(), userView.getZ()) + viewport.getPosition().x;
+        float centerY = viewport.getGraphics().screenY(userView.getX(), userView.getY(), userView.getZ()) + viewport.getPosition().y;
+
+        int mouseX = Main.UI_COORDINATOR.getMouseX(), pmouseX = Main.UI_COORDINATOR.getPrevMouseX();
+        int mouseY = Main.UI_COORDINATOR.getMouseY(), pmouseY = Main.UI_COORDINATOR.getPrevMouseY();
+        PVector arm = new PVector(pmouseX - centerX, pmouseY - centerY);
+        PVector drag = new PVector(mouseX - pmouseX, mouseY - pmouseY);
+
+        userView.setRotX(Math.min(0, Math.max(userView.getRotX() + 0.01f*(mouseY - pmouseY), -PConstants.HALF_PI)));
+        userView.setRotZ(((userView.getRotZ() + (0.01f) * drag.cross(arm).z / arm.mag()) % PConstants.TWO_PI + PConstants.TWO_PI) % PConstants.TWO_PI);
+        manager.enqueueAnimation(userView, null, 0);
+    }
+
+    @Override
+    public int priority() {
+        return 1;
+    }
+
+    @Override
+    public void startDrag() {}
+
+    @Override
+    public void endDrag() {}
+    
+    @Override
+    public void addTarget(DragTarget<Void> target) {}
+
+    @Override
+    public void addCallback(CallBack callBack) {}
+
+    @Override
+    public Void getPayload() { return null; }
+
+    private PVector boardPos(int row, int col) {
         PVector res = new PVector(edgePadding + pieceWidth/2 - dimensions.x/2, edgePadding + pieceWidth/2 - dimensions.x/2, 1);
-        res = res.add(x*(interiorPadding + pieceWidth), y*(interiorPadding + pieceWidth));
+        res = res.add(col*(interiorPadding + pieceWidth), row*(interiorPadding + pieceWidth));
         return res;
     }
 }

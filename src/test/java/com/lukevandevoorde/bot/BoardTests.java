@@ -6,15 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import com.lukevandevoorde.quartolayer.QuartoPiece;
+
 public class BoardTests {
 
     @Test
     public void testMoveBoard() {
         QB board = new QB();
-        byte p1 = QB.piece(true, false, false, false);
-        byte p2 = QB.piece(true, true, false, false);
-        byte p3 = QB.piece(true, false, true, false);
-        byte p4 = QB.piece(true, false, false, true);
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+        byte p3 = QuartoPiece.quartoPiece(true, false, true, false);
+        byte p4 = QuartoPiece.quartoPiece(true, false, false, true);
         
         assertFalse(board.move(p1, 1, 0));
         assertFalse(board.move(p2, 2, 2)); // eq diag
@@ -31,10 +33,10 @@ public class BoardTests {
     @Test
     public void testMoveHazards() {
         QB board = new QB();
-        byte p1 = QB.piece(true, false, false, false);
-        byte p2 = QB.piece(true, true, false, false);
-        byte p3 = QB.piece(true, false, true, false);
-        byte p4 = QB.piece(true, false, false, true);
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+        byte p3 = QuartoPiece.quartoPiece(true, false, true, false);
+        byte p4 = QuartoPiece.quartoPiece(true, false, false, true);
         
         assertFalse(board.move(p1, 1, 0));
         assertFalse(board.move(p2, 2, 2)); // eq diag
@@ -65,10 +67,10 @@ public class BoardTests {
     @Test
     public void testMoveCounts() {
         QB board = new QB();
-        byte p1 = QB.piece(true, false, false, false);
-        byte p2 = QB.piece(true, true, false, false);
-        byte p3 = QB.piece(true, false, true, false);
-        byte p4 = QB.piece(true, false, false, true);
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+        byte p3 = QuartoPiece.quartoPiece(true, false, true, false);
+        byte p4 = QuartoPiece.quartoPiece(true, false, false, true);
         
         assertFalse(board.move(p1, 1, 0));
         assertFalse(board.move(p2, 2, 2)); // eq diag
@@ -99,10 +101,10 @@ public class BoardTests {
     @Test
     public void testBoardRowWin() {
         QB board = new QB();
-        byte p1 = QB.piece(true, false, false, false);
-        byte p2 = QB.piece(true, true, false, false);
-        byte p3 = QB.piece(true, false, true, false);
-        byte p4 = QB.piece(true, false, false, true);
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+        byte p3 = QuartoPiece.quartoPiece(true, false, true, false);
+        byte p4 = QuartoPiece.quartoPiece(true, false, false, true);
         
         assertFalse(board.move(p1, 3, 0));
         assertFalse(board.move(p2, 3, 1));
@@ -113,10 +115,10 @@ public class BoardTests {
     @Test
     public void testBoardColWin() {
         QB board = new QB();
-        byte p1 = QB.piece(true, false, false, false);
-        byte p2 = QB.piece(true, true, false, false);
-        byte p3 = QB.piece(true, false, true, false);
-        byte p4 = QB.piece(true, false, false, true);
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+        byte p3 = QuartoPiece.quartoPiece(true, false, true, false);
+        byte p4 = QuartoPiece.quartoPiece(true, false, false, true);
         
         assertFalse(board.move(p1, 0, 3));
         assertFalse(board.move(p2, 1, 3));
@@ -127,10 +129,10 @@ public class BoardTests {
     @Test
     public void testBoardEqDiagWin() {
         QB board = new QB();
-        byte p1 = QB.piece(true, false, false, false);
-        byte p2 = QB.piece(true, true, false, false);
-        byte p3 = QB.piece(true, false, true, false);
-        byte p4 = QB.piece(true, false, false, true);
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+        byte p3 = QuartoPiece.quartoPiece(true, false, true, false);
+        byte p4 = QuartoPiece.quartoPiece(true, false, false, true);
         
         assertFalse(board.move(p1, 0, 0));
         assertFalse(board.move(p2, 1, 1));
@@ -141,10 +143,10 @@ public class BoardTests {
     @Test
     public void testBoardCompDiagWin() {
         QB board = new QB();
-        byte p1 = QB.piece(true, false, false, false);
-        byte p2 = QB.piece(true, true, false, false);
-        byte p3 = QB.piece(true, false, true, false);
-        byte p4 = QB.piece(true, false, false, true);
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+        byte p3 = QuartoPiece.quartoPiece(true, false, true, false);
+        byte p4 = QuartoPiece.quartoPiece(true, false, false, true);
         
         assertFalse(board.move(p1, 0, 3));
         assertFalse(board.move(p2, 1, 2));
@@ -155,10 +157,10 @@ public class BoardTests {
     @Test
     public void testHazardsRow() {
         QB board = new QB();
-        byte p1 = QB.piece(true, false, false, false);
-        byte p2 = QB.piece(true, true, false, false);
-        byte p3 = QB.piece(true, false, true, false);
-        byte p4 = QB.piece(true, false, false, true);
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+        byte p3 = QuartoPiece.quartoPiece(true, false, true, false);
+        byte p4 = QuartoPiece.quartoPiece(true, false, false, true);
         
         board.move(p1, 0, 0);
         byte[] hazards = board.getHazards(0, 0);
@@ -180,10 +182,10 @@ public class BoardTests {
     @Test
     public void testUndo() {
         QB board = new QB();
-        byte p1 = QB.piece(true, false, false, false);
-        byte p2 = QB.piece(true, true, false, false);
-        byte p3 = QB.piece(true, false, true, false);
-        byte p4 = QB.piece(true, false, false, true);
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+        byte p3 = QuartoPiece.quartoPiece(true, false, true, false);
+        byte p4 = QuartoPiece.quartoPiece(true, false, false, true);
 
         board.move(p1, 0, 0);
         board.move(p2, 0, 1);

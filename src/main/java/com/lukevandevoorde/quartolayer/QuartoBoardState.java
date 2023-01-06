@@ -12,5 +12,7 @@ public interface QuartoBoardState {
 
     // returns a set of all QuartoPieces not currently on the board
     public Set<QuartoPiece> getRemainingPieces();
+
+    public boolean won();
     
 }

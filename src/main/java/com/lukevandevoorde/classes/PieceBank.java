@@ -9,7 +9,6 @@ import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.core.PVector;
 import com.lukevandevoorde.interfaces.DragTarget;
-import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class PieceBank extends Drawable {
@@ -25,7 +24,7 @@ public class PieceBank extends Drawable {
     private float rectRadius;
 
     public PieceBank(Viewport viewport, TransformData transform, PVector dimensions, Set<QuartoPiece> pieces,
-                        Collection<DragTarget<PieceDraggable>> targets) {
+                        Collection<DragTarget<QuartoPiece>> targets) {
         super(viewport, transform, dimensions);
         
         baseWidth = 5; // random garbage, will be set later
@@ -33,13 +32,6 @@ public class PieceBank extends Drawable {
 
         for (QuartoPiece p: pieces) {
             PieceDraggable draggable = new PieceDraggable(viewport, new TransformData(), new PVector(), p);
-            draggable.addCallback(
-                new Draggable.CallBack() {
-                    public void onAccept() {
-                        drags.remove(draggable);
-                    }
-                }
-            );
             targets.forEach(target -> draggable.addTarget(target));
             drags.add(draggable);
         }
@@ -48,6 +40,17 @@ public class PieceBank extends Drawable {
         paddedDimensions = new PVector();
         setDimensions(dimensions);
         setTransform(transform);
+    }
+
+    public PieceDraggable match(QuartoPiece p) {
+        for (PieceDraggable d: drags) {
+            if (d.getPayload().equals(p)) return d;
+        }
+        return null;
+    }
+
+    public void withdraw(PieceDraggable drag) {
+        this.drags.remove(drag);
     }
 
     @Override
@@ -69,7 +72,7 @@ public class PieceBank extends Drawable {
     public void setTransform(TransformData newTransform) {
         this.transform.set(newTransform);
         for (PieceDraggable piece: drags) {
-            piece.setTransform(new TransformData(pieceMapper(piece.getPiece()).add(transform.getPosition()).add(paddedPosition), new PVector(BASE_TILT,0,0)));
+            piece.setTransform(new TransformData(pieceMapper(piece.getPayload()).add(transform.getPosition()).add(paddedPosition), new PVector(BASE_TILT,0,0)));
             piece.returnToBase(0);
         }
     }

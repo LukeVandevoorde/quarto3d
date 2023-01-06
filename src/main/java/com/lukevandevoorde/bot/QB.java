@@ -2,6 +2,8 @@ package com.lukevandevoorde.bot;
 
 import java.util.HashSet;
 
+import com.lukevandevoorde.quartolayer.QuartoPiece;
+
 public class QB {
 
     protected byte[] rowHazards, colHazards;
@@ -28,10 +30,7 @@ public class QB {
         board = new byte[4][4];
         won = false;
 
-        remainingPieces = new HashSet<Byte>(); 
-        for (int i = 0; i < 16; i++) {
-            remainingPieces.add(piece((i/8)%2==0, (i/4)%2==0, (i/2)%2==0, i%2==0));
-        }
+        remainingPieces = QuartoPiece.allBytes();
     }
 
     public QB(QB other) {
@@ -60,17 +59,8 @@ public class QB {
         }
     }
 
-    public static byte piece(boolean isTall, boolean isLight, boolean isSquare, boolean isFilled) {
-        byte p = 0;
-        p |= isTall ? 1 : 2;
-        p |= isLight ? 4 : 8;
-        p |= isSquare ? 16 : 32;
-        p |= isFilled ? 64 : 128;
-        return p;
-    }
-
-    public static int pieceToID(byte piece) {
-        return (piece & 1) | ((piece & 4) >> 1) | ((piece & 16) >> 2) | ((piece & 64) >> 3);
+    public boolean won() {
+        return this.won;
     }
 
     // performs absolutely 0 checks on legality and bounds

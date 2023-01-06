@@ -4,14 +4,15 @@ import processing.core.PGraphics;
 import processing.core.PVector;
 import java.util.HashSet;
 import com.lukevandevoorde.Main;
+import com.lukevandevoorde.interfaces.Clickable;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
-public class PieceDraggable extends Drawable implements Draggable<PieceDraggable> {
+public class PieceDraggable extends Drawable implements Draggable<QuartoPiece>, Clickable {
 
     private QuartoPiece piece;
-    private HashSet<DragTarget<PieceDraggable>> targets;
+    private HashSet<DragTarget<QuartoPiece>> targets;
     private HashSet<Draggable.CallBack> callBacks;
 
     private TransformData baseViewPosition, baseViewRotation, pieceRotationDragData;
@@ -22,7 +23,7 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         super(graphics, new TransformData(transform.getPosition(), new PVector()), dimensions);
         this.piece = piece;
         callBacks = new HashSet<Draggable.CallBack>();
-        targets = new HashSet<DragTarget<PieceDraggable>>();
+        targets = new HashSet<DragTarget<QuartoPiece>>();
 
         baseViewPosition = new TransformData(transform.getPosition(), new PVector());    // Could maybe init this when calling super constructor somehow
         baseViewRotation = new TransformData(new PVector(), transform.getRotation());
@@ -32,11 +33,7 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
 
         PieceDrawable pieceDrawable = new PieceDrawable(graphics, baseViewRotation, dimensions, piece);
         animatedPiece = new AnimatedDrawable(pieceDrawable);
-        Main.MOUSE_COORDINATOR.add(this);
-    }
-
-    public QuartoPiece getPiece() {
-        return this.piece;
+        Main.UI_COORDINATOR.add(this);
     }
 
     public TransformData getBaseTransform() {
@@ -55,6 +52,8 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
         animatedPiece.animate(animatedPiece.getCurrentTransform(), animatedPiece.getCurrentDimensions(), 0);
         animatedPiece.skipAnimation();
         animatedPiece.animate(baseViewRotation, dimensions, millis);
+        positionManager.enqueueAnimation(positionManager.currentTransform(), null, 0);
+        positionManager.flush();
         positionManager.enqueueAnimation(baseViewPosition, dimensions, millis);
     }
 
@@ -83,13 +82,13 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
     }
 
     @Override
-    public void addTarget(DragTarget<PieceDraggable> target) {
+    public void addTarget(DragTarget<QuartoPiece> target) {
         targets.add(target);
     }
 
     @Override
-    public PieceDraggable getPayload() {
-        return this;
+    public QuartoPiece getPayload() {
+        return this.piece;
     }
 
     @Override
@@ -104,10 +103,10 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
     public void update() {
         float scale = viewport.getScale(transform.getZ() + animatedPiece.transform.getZ());
         
-        transform.setX((viewport.width()/2) + (viewport.effectiveX(Main.MOUSE_COORDINATOR.getMouseX()) - viewport.width()/2)/scale);
-        transform.setY((viewport.height()/2) + (viewport.effectiveY(Main.MOUSE_COORDINATOR.getMouseY()) - viewport.height()/2)/scale);
+        transform.setX((viewport.width()/2) + (viewport.effectiveX(Main.UI_COORDINATOR.getMouseX()) - viewport.width()/2)/scale);
+        transform.setY((viewport.height()/2) + (viewport.effectiveY(Main.UI_COORDINATOR.getMouseY()) - viewport.height()/2)/scale);
 
-        for (DragTarget<PieceDraggable> t: targets) {
+        for (DragTarget<QuartoPiece> t: targets) {
             if (t.willAccept(this)) break;
         }
 
@@ -117,37 +116,33 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
     @Override
     public void endDrag() {
         boolean willAccept = false;
-        DragTarget<PieceDraggable> t = null;
+        DragTarget<QuartoPiece> t = null;
 
-        for (DragTarget<PieceDraggable> target: targets) {
+        for (DragTarget<QuartoPiece> target: targets) {
             if (willAccept = (t = target).willAccept(this)) {
                 break;
             }
         }
 
         if (willAccept) {
-            Main.MOUSE_COORDINATOR.remove(this);
-            for (Draggable.CallBack c: callBacks) {
-                c.onAccept();
-            }
+            Main.UI_COORDINATOR.remove(this);
+            callBacks.forEach(c -> c.onAccept());
 
             targets.clear();
             callBacks.clear();
 
             t.accept(this);
         } else {
-            for (Draggable.CallBack c: callBacks) {
-                c.onReject();
-            }
+            callBacks.forEach(c -> c.onReject());
         }
         
         returnToBase(350);
     }
 
     @Override
-    public boolean mouseHover(int mouseX, int mouseY) {
+    public boolean mouseOver() {
         boolean hovering = false;
-        PVector m = viewport.getLocalPoint(new PVector(mouseX, mouseY));
+        PVector m = viewport.getLocalPoint(new PVector(Main.UI_COORDINATOR.getMouseX(), Main.UI_COORDINATOR.getMouseY()));
         PVector test = new PVector();
 
         PGraphics graphics = this.viewport.getGraphics();
@@ -166,5 +161,20 @@ public class PieceDraggable extends Drawable implements Draggable<PieceDraggable
 
         graphics.popMatrix();
         return hovering;
+    }
+
+    @Override
+    public void onClick() {
+        System.out.println("\tOn Click");
+    }
+
+    @Override
+    public void onDoubleClick() {
+        System.out.println("\tOn Double Click");
+    }
+
+    @Override
+    public int priority() {
+        return 2;
     }
 }
