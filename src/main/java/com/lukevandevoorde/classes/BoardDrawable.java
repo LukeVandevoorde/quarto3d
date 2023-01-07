@@ -7,6 +7,7 @@ import processing.core.PVector;
 import java.util.HashSet;
 
 import com.lukevandevoorde.Main;
+import com.lukevandevoorde.classes.AnimationManager.AnimationSpeed;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.quartolayer.QuartoBoardState;
@@ -14,9 +15,6 @@ import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarget<QuartoPiece> {
     
-    private static final int VIEW_SWITCH_MILLIS = 350;
-    private static final int PIECE_DROP_MILLIS = 200;
-
     private static final float PIECE_WIDTH_PROPORTION = 0.14f;
     private static final float EDGE_PADDING_BIAS = 1.25f;
 
@@ -24,7 +22,7 @@ public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarg
     private float pieceWidth, interiorPadding, edgePadding;
     private AnimationManager manager;
     private TransformData userView, selectView;
-    private int pieceDropStartTime;
+    private int pieceDropEndTime;
     private boolean inUserView;
 
     // highlight spot under hovering PieceDraggable to make placement obvious
@@ -33,6 +31,7 @@ public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarg
     private int lastPlacementIndex;
     // highlight pieces in winning rows
     private HashSet<Integer> windices;
+    private int winHighlightColor;
 
     private QuartoPiece lastPlacementPiece;
     private UIPlayer notify;
@@ -44,7 +43,7 @@ public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarg
         this.userView = userView;
         this.selectView = selectView;
         this.inUserView = true;
-        this.pieceDropStartTime = 0;
+        this.pieceDropEndTime = 0;
 
         pieces = new Drawable[16];
         setDimensions(dimensions);
@@ -76,14 +75,15 @@ public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarg
         return this.lastPlacementPiece;
     }
 
-    public void highlightWin(int[][] winningCoords) {
+    public void highlightWin(int[][] winningCoords, int highlightColor) {
         windices = new HashSet<>();
         for (int i = 0; i < winningCoords[0].length; i++) {
             windices.add(4*winningCoords[0][i] + winningCoords[1][i]);
         }
+        this.winHighlightColor = highlightColor;
     }
 
-    public int enterSelectView() {
+    public int enterSelectView(AnimationManager.AnimationSpeed speed) {
         if (!inUserView) return 0;
         inUserView = false;
 
@@ -91,7 +91,7 @@ public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarg
         TransformData ct = manager.currentTransform();
         manager.enqueueAnimation(ct, manager.currentDimensions(), 0);
         manager.flush();
-        int time = AnimationManager.calcAnimationTime(1000, 2, ct, selectView);
+        int time = AnimationManager.calcAnimationTime(speed, ct, selectView);
         manager.enqueueAnimation(selectView, null, time);
         return time;
     }
@@ -102,20 +102,54 @@ public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarg
         manager.enqueueAnimation(userView, null, 0);
     }
 
-    public int enterUserView() {
+    public int enterUserView(AnimationSpeed speed) {
         if (inUserView) return 0;
         inUserView = true;
 
         // Wait for dropped pieces to finish dropping
-        int diff = Main.TIME_KEEPER.millis() - (pieceDropStartTime + PIECE_DROP_MILLIS + 150);
-        if (diff < 0) manager.enqueueAnimation(selectView, null, -diff);
+        int diff = Main.TIME_KEEPER.millis() - (pieceDropEndTime);
+        if (diff < 0) {
+            manager.enqueueAnimation(selectView, null, -diff);
+            TransformData ct = manager.currentTransform();
+            manager.enqueueAnimation(ct, manager.currentDimensions(), 0);
+            int time = AnimationManager.calcAnimationTime(speed, ct, userView);
+            manager.enqueueAnimation(userView, null, time);
+            return time - Math.min(diff, 0);
+        } else {
+            TransformData ct = manager.currentTransform();
+            manager.enqueueAnimation(ct, manager.currentDimensions(), 0);
+            int time = AnimationManager.calcAnimationTime(speed, ct, userView);
+            manager.flush();
+            manager.enqueueAnimation(userView, null, time);
+            return time - Math.min(diff, 0);
+        }
+    }
 
-        TransformData ct = manager.currentTransform();
-        manager.enqueueAnimation(ct, manager.currentDimensions(), 0);
-        manager.flush();
-        int time = AnimationManager.calcAnimationTime(1000, 2, ct, userView);
-        manager.enqueueAnimation(userView, null, time);
-        return time - Math.max(diff, 0);
+    public int handOff(PieceDraggable piece, int row, int col, AnimationSpeed dropSpeed) {
+        PVector posDiff = this.boardPos(row, col);
+        posDiff.rotate(-this.transform.getRotZ());
+        posDiff.x += this.transform.getX();
+        posDiff.y += this.transform.getY();
+        
+        TransformData pos = piece.currentTransform();
+
+        posDiff.x = pos.getX() - posDiff.x;
+        posDiff.y = pos.getY() - posDiff.y;
+        posDiff.rotate(this.transform.getRotZ());
+        posDiff.z = pos.getZ() - piece.getDimensions().z/2 - this.transform.getZ();
+        
+        TransformData diff = new TransformData(posDiff, pos.getRotation());
+        AnimatedDrawable ad = new AnimatedDrawable(new PieceDrawable(viewport, diff, piece.getDimensions(), piece.getPayload()));
+
+        Main.UI_COORDINATOR.remove(piece);
+
+        TransformData home = new TransformData();
+        int dropTime = AnimationManager.calcAnimationTime(dropSpeed, diff, home);
+        ad.animate(home, new PVector(pieceWidth, pieceWidth, dimensions.z), dropTime);
+        pieces[4*row+col] = ad;
+        lastPlacementIndex = 4*row+col;
+        pieceDropEndTime = Main.TIME_KEEPER.millis() + dropTime;
+        return dropTime;
     }
 
     @Override
@@ -153,30 +187,6 @@ public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarg
         hoverIndex = -1;
 
         return true;
-    }
-
-    public void handOff(PieceDraggable piece, int row, int col) {
-        PVector posDiff = this.boardPos(row, col);
-        posDiff.rotate(-this.transform.getRotZ());
-        posDiff.x += this.transform.getX();
-        posDiff.y += this.transform.getY();
-        
-        TransformData pos = piece.currentTransform();
-
-        posDiff.x = pos.getX() - posDiff.x;
-        posDiff.y = pos.getY() - posDiff.y;
-        posDiff.rotate(this.transform.getRotZ());
-        posDiff.z = pos.getZ() - piece.getDimensions().z/2 - this.transform.getZ();
-
-        TransformData diff = new TransformData(posDiff, pos.getRotation());
-        AnimatedDrawable ad = new AnimatedDrawable(new PieceDrawable(viewport, diff, piece.getDimensions(), piece.getPayload()));
-
-        Main.UI_COORDINATOR.remove(piece);
-
-        pieceDropStartTime = Main.TIME_KEEPER.millis();
-        ad.animate(new TransformData(), new PVector(pieceWidth, pieceWidth, dimensions.z), PIECE_DROP_MILLIS);
-        pieces[4*row+col] = ad;
-        lastPlacementIndex = 4*row+col;
     }
     
     @Override
@@ -227,7 +237,7 @@ public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarg
                 } else if (index == lastPlacementIndex) {
                     graphics.fill(230, 220, 210);
                 } else if (windices != null && windices.contains(index)) {
-                    graphics.fill(79, 83, 196);
+                    graphics.fill(winHighlightColor);
                 } else {
                     graphics.fill(120, 110, 100);
                 }

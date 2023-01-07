@@ -1,9 +1,15 @@
 package com.lukevandevoorde.classes;
 
+import com.lukevandevoorde.classes.AnimationManager.AnimationSpeed;
 import com.lukevandevoorde.quartolayer.QuartoBoardState;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class ComputerPlayer extends Player {
+
+    public static final AnimationSpeed SELECT_SPEED = new AnimationSpeed(1000, 2);
+    public static final AnimationSpeed USER_VIEW_SPEED = new AnimationSpeed(1200, 2);
+    public static final AnimationSpeed OFFERING_SPEED = new AnimationSpeed(1000, 1);
+    public static final AnimationSpeed DROP_SPEED = new AnimationSpeed(1000, 1);
 
     public ComputerPlayer() {}
 
@@ -17,7 +23,6 @@ public class ComputerPlayer extends Player {
                 }
             }
         }
-        
     }
 
     @Override
@@ -25,5 +30,24 @@ public class ComputerPlayer extends Player {
         QuartoPiece offering = board.getRemainingPieces().iterator().next();
         manager.notifyOffering(this, offering);
     }
-    
+
+    @Override
+    public AnimationSpeed selectViewSpeed() {
+        return SELECT_SPEED;
+    }
+
+    @Override
+    public AnimationSpeed userViewSpeed() {
+        return USER_VIEW_SPEED;
+    }
+
+    @Override
+    public AnimationSpeed pieceOfferingSpeed() {
+        return OFFERING_SPEED;
+    }
+
+    @Override
+    public AnimationSpeed dropSpeed() {
+        return DROP_SPEED;
+    }
 }

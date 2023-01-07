@@ -4,12 +4,15 @@ import processing.core.PGraphics;
 import processing.core.PVector;
 import java.util.HashSet;
 import com.lukevandevoorde.Main;
+import com.lukevandevoorde.classes.AnimationManager.AnimationSpeed;
 import com.lukevandevoorde.interfaces.Clickable;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.Draggable;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class PieceDraggable extends Drawable implements Draggable<QuartoPiece>, Clickable {
+
+    private static final AnimationManager.AnimationSpeed DEFAULT_RETURN_SPEED = new AnimationManager.AnimationSpeed(2000, 3);
 
     private QuartoPiece piece;
     private HashSet<DragTarget<QuartoPiece>> targets;
@@ -25,7 +28,7 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece>, 
         callBacks = new HashSet<Draggable.CallBack>();
         targets = new HashSet<DragTarget<QuartoPiece>>();
 
-        baseViewPosition = new TransformData(transform.getPosition(), new PVector());    // Could maybe init this when calling super constructor somehow
+        baseViewPosition = new TransformData(transform.getPosition(), new PVector());
         baseViewRotation = new TransformData(new PVector(), transform.getRotation());
         pieceRotationDragData = new TransformData();
 
@@ -48,13 +51,17 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece>, 
         return this.animatedPiece.getCurrentDimensions();
     }
 
-    public void returnToBase(int millis) {
+    public int returnToBase(AnimationSpeed speed) {
+        TransformData position = positionManager.currentTransform();
+        int time = AnimationManager.calcAnimationTime(speed, position, baseViewPosition);
         animatedPiece.animate(animatedPiece.getCurrentTransform(), animatedPiece.getCurrentDimensions(), 0);
         animatedPiece.skipAnimation();
-        animatedPiece.animate(baseViewRotation, dimensions, millis);
-        positionManager.enqueueAnimation(positionManager.currentTransform(), null, 0);
+        animatedPiece.animate(baseViewRotation, dimensions, time);
+        positionManager.enqueueAnimation(position, null, 0);
         positionManager.flush();
-        positionManager.enqueueAnimation(baseViewPosition, dimensions, millis);
+        positionManager.enqueueAnimation(baseViewPosition, dimensions, time);
+
+        return time;
     }
 
     @Override
@@ -93,7 +100,7 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece>, 
 
     @Override
     public void startDrag() {
-        animatedPiece.animate(pieceRotationDragData, dimensions, 350);
+        animatedPiece.animate(pieceRotationDragData, dimensions, 200);
         for (Draggable.CallBack c: callBacks) {
             c.onStartDrag();
         }
@@ -134,9 +141,8 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece>, 
             t.accept(this);
         } else {
             callBacks.forEach(c -> c.onReject());
+            returnToBase(DEFAULT_RETURN_SPEED);
         }
-        
-        returnToBase(350);
     }
 
     @Override
@@ -152,12 +158,12 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece>, 
         graphics.translate(0, -animatedPiece.getHeight() / 4, 0);
         test.x = graphics.screenX(0, 0, 0);
         test.y = graphics.screenY(0, 0, 0);
-        hovering = hovering || m.dist(test) <= viewport.getScale(positionManager.currentTransform().getZ()) * animatedPiece.getWidth();
+        hovering = hovering || m.dist(test) <= 1.25f*viewport.getScale(positionManager.currentTransform().getZ()) * animatedPiece.getWidth();
 
         graphics.translate(0, animatedPiece.getHeight() / 2, 0);
         test.x = graphics.screenX(0, 0, 0);
         test.y = graphics.screenY(0, 0, 0);
-        hovering = hovering || m.dist(test) <= viewport.getScale(positionManager.currentTransform().getZ()) * animatedPiece.getWidth();
+        hovering = hovering || m.dist(test) <= 1.25f*viewport.getScale(positionManager.currentTransform().getZ()) * animatedPiece.getWidth();
 
         graphics.popMatrix();
         return hovering;

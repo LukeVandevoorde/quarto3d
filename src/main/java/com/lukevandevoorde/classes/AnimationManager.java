@@ -6,6 +6,15 @@ import processing.core.PVector;
 
 public class AnimationManager {
     
+    public static class AnimationSpeed {
+        private float maxPixelsPerSecond, maxRadiansPerSecond;
+        
+        public AnimationSpeed(float maxPixelsPerSecond, float maxRadiansPerSecond) {
+            this.maxPixelsPerSecond = maxPixelsPerSecond;
+            this.maxRadiansPerSecond = maxRadiansPerSecond;
+        }
+    }
+
     private TransformData baseTransform;
     private PVector baseDimensions;
     private final LinkedList<TransformData> transformSequence;
@@ -30,15 +39,24 @@ public class AnimationManager {
         buffered = true;
     }
 
-    public static int calcAnimationTime(int pixelsPerSecond, int radiansPerSecond, TransformData t1, TransformData t2) {
+    public static int calcAnimationTime(AnimationSpeed speed, TransformData t1, TransformData t2) {
         float dist = t1.getPosition().dist(t2.getPosition());
         float maxAng = Math.max(Math.abs(t2.getRotX()-t1.getRotX()), Math.max(Math.abs(t2.getRotY()-t1.getRotY()), Math.abs(t2.getRotZ()-t1.getRotZ())));
 
-        return (int)(1000*Math.max(dist/pixelsPerSecond, maxAng/radiansPerSecond));
+        return (int)(1000*Math.max(dist/speed.maxPixelsPerSecond, maxAng/speed.maxRadiansPerSecond));
     }
 
     public boolean animating() {
         return this.animating;
+    }
+
+    public int remainingTime() {
+        if (!animating) return 0;
+        int sum = millisStart - Main.TIME_KEEPER.millis();
+        for (Integer t: durations) {
+            sum += t;
+        }
+        return sum;
     }
 
     // Adds an animation step, and starts animating if necessary

@@ -11,11 +11,12 @@ import processing.core.PVector;
 
 public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPiece> {
 
-    private static final int HANDOFF_MILLIS = 350;
-
     private class Indicator extends Drawable {
-        public Indicator(Viewport viewport, TransformData transform, PVector dimensions) {
+        private int color;
+
+        public Indicator(Viewport viewport, TransformData transform, PVector dimensions, int color) {
             super(viewport, transform, dimensions);
+            this.color = color;
         }
 
         @Override
@@ -23,8 +24,9 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
             PGraphics graphics = viewport.getGraphics();
             graphics.push();
             transform.transform(graphics);
+            graphics.fill(color);
+            graphics.stroke(color);
             graphics.strokeWeight(3);
-            graphics.fill(graphics.color(0));
             graphics.beginShape(PGraphics.TRIANGLE);
             graphics.vertex(dimensions.x/2, 0, 0);
             graphics.vertex(-dimensions.x/2, dimensions.y, 0);
@@ -40,48 +42,51 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
     }
     
     private static final float PADDING_PROP = 0.025f;
+    private static final PVector ZERO_SIZE = new PVector();
+    private static final int FADE_MILLIS = 200;
 
     private PieceDraggable drag;
     private DragTarget<QuartoPiece> board;
     private Draggable.CallBack boardPlaceCallback;
 
-    private boolean uiDropEnabled, uiRemovalEnabled;
+    private boolean uiDropEnabled;
     private UIPlayer notify;
 
+    private int ownerColor;
     private PVector paddedPosition, paddedDimensions;
-    private AnimatedDrawable indicator;
+    private AnimatedDrawable dropIndicator, removeIndicator;
     private TransformData dropTransform, removeTransform;
+    private PVector indicatorDimensions;
     private PVector labelPosition;
     private String label;
 
-    public PieceOfferingHolder(Viewport viewport, TransformData transform, PVector dimensions, DragTarget<QuartoPiece> board, Draggable.CallBack boardPlaceCallback, boolean indicatorOnRight, String label) {
+    public PieceOfferingHolder(Viewport viewport, TransformData transform, PVector dimensions, DragTarget<QuartoPiece> board, Draggable.CallBack boardPlaceCallback, int ownerColor, int dropperColor, boolean indicatorOnRight, String label) {
         super(viewport, transform, dimensions);
         this.board = board;
         this.boardPlaceCallback = boardPlaceCallback;
         this.uiDropEnabled = false;
-        this.uiRemovalEnabled = false;
         this.label = label;
-
         this.paddedPosition = new PVector(dimensions.x * PADDING_PROP, dimensions.y * PADDING_PROP);
         this.paddedDimensions = new PVector(dimensions.x * (1 - 2*PADDING_PROP), dimensions.y * (1 - 2*PADDING_PROP), PADDING_PROP*Math.min(dimensions.x, dimensions.y));
 
         float len = Math.min(dimensions.x, dimensions.y)/6;
-        PVector dim = new PVector(len, len/3.3f);
+        indicatorDimensions = new PVector(len, len/3.3f);
 
         viewport.getGraphics().push();
         if (indicatorOnRight) {
-            dropTransform = new TransformData(new PVector(dim.x/2 + 1.1f * dimensions.x, 0.5f * dimensions.y), new PVector(0, 0, PConstants.PI));
-            removeTransform = new TransformData(new PVector(dim.x/2 + 1.1f * dimensions.x, 0.5f * dimensions.y), new PVector(0, 0, PConstants.PI * 0.2f));
-            labelPosition = new PVector(dimensions.x, paddedPosition.y + paddedDimensions.y, dimensions.y/10);
+            dropTransform = new TransformData(new PVector(indicatorDimensions.x/2 + 1.1f * dimensions.x, 0.5f * dimensions.y), new PVector(0, 0, PConstants.PI));
+            removeTransform = new TransformData(new PVector(indicatorDimensions.x/2 + 1.1f * dimensions.x, 0.5f * dimensions.y), new PVector(0, 0, PConstants.PI * 0.2f));
+            labelPosition = new PVector(dimensions.x, paddedPosition.y + paddedDimensions.y, dimensions.y/6);
         } else {
-            dropTransform = new TransformData(new PVector(-dim.x/2 - 0.1f * dimensions.x, 0.5f * dimensions.y), new PVector(0, 0, 0));
-            removeTransform = new TransformData(new PVector(-dim.x/2 - 0.1f * dimensions.x, 0.5f * dimensions.y), new PVector(0, 0, PConstants.PI * 0.8f));
-            viewport.getGraphics().textSize(dimensions.y/10);
-            labelPosition = new PVector(-viewport.getGraphics().textWidth(label), paddedPosition.y + paddedDimensions.y, dimensions.y/10);
+            dropTransform = new TransformData(new PVector(-indicatorDimensions.x/2 - 0.1f * dimensions.x, 0.5f * dimensions.y), new PVector(0, 0, 0));
+            removeTransform = new TransformData(new PVector(-indicatorDimensions.x/2 - 0.1f * dimensions.x, 0.5f * dimensions.y), new PVector(0, 0, PConstants.PI * 0.8f));
+            viewport.getGraphics().textSize(dimensions.y/6);
+            labelPosition = new PVector(-viewport.getGraphics().textWidth(label), paddedPosition.y + paddedDimensions.y, dimensions.y/6);
         }
         viewport.getGraphics().pop();
 
-        indicator = new AnimatedDrawable(new Indicator(viewport, dropTransform, dim));
+        dropIndicator = new AnimatedDrawable(new Indicator(viewport, dropTransform, new PVector(), dropperColor));
+        removeIndicator = new AnimatedDrawable(new Indicator(viewport, removeTransform, new PVector(), ownerColor));
     }
 
     public PieceDraggable getPieceDraggable() {
@@ -92,28 +97,42 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
         this.drag = null;
     }
 
+    public void indicateDrop() {
+        dropIndicator.setTransform(dropTransform);
+        dropIndicator.setDimensions(ZERO_SIZE);
+        dropIndicator.animate(dropTransform, indicatorDimensions, FADE_MILLIS);
+    }
+
+    public void switchIndication() {
+        dropIndicator.animate(dropTransform, ZERO_SIZE, FADE_MILLIS);
+        removeIndicator.animate(dropTransform, ZERO_SIZE, FADE_MILLIS);
+        removeIndicator.animate(dropTransform, indicatorDimensions, FADE_MILLIS);
+        removeIndicator.animate(removeTransform, indicatorDimensions, 350);
+    }
+
+    public void hideRemovalIndicator(int timeToInvisible) {
+        removeIndicator.animate(removeTransform, indicatorDimensions, Math.max(0, timeToInvisible - removeIndicator.remainingTime() - FADE_MILLIS));
+        removeIndicator.animate(removeTransform, ZERO_SIZE, FADE_MILLIS);
+    }
+
     // Will notify player when a piece is dropped into this holder
-    public void requestNotification(UIPlayer player) {
+    public void setListener(UIPlayer player) {
         this.notify = player;
     }
 
-    public void enableDrop() {
+    public void enableUIDrop() {
         this.uiDropEnabled = true;
-        this.indicator.animate(dropTransform, null, 0);
     }
 
-    public void disableDrop() {
+    public void disableUIDrop() {
         this.uiDropEnabled = false;
     }
 
-    public void enableRemoval() {
-        this.uiRemovalEnabled = true;
+    public void enableUIRemoval() {
         if (this.drag != null) Main.UI_COORDINATOR.add(drag);
-        this.indicator.animate(removeTransform, null, 350);
     }
 
-    public void disableRemoval() {
-        this.uiRemovalEnabled = false;
+    public void disableUIRemoval() {
         if (this.drag != null) Main.UI_COORDINATOR.remove(drag);
     }
 
@@ -124,13 +143,17 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
         if (drag != null) drag.draw();
 
         this.transform.transform(graphics);
-        if (uiDropEnabled || uiRemovalEnabled) indicator.draw();
 
+        graphics.stroke(this.ownerColor);
+        graphics.fill(this.ownerColor);
         graphics.noFill();
         graphics.strokeWeight(5);
         graphics.rect(paddedPosition.x, paddedPosition.y, paddedDimensions.x, paddedDimensions.y, paddedDimensions.z);
         graphics.textSize(labelPosition.z);
         graphics.text(label, labelPosition.x, labelPosition.y);
+
+        dropIndicator.draw();
+        removeIndicator.draw();
 
         graphics.pop();
     }
@@ -163,8 +186,8 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
         return true;
     }
 
-    public int handOff(PieceDraggable draggable) {
-        if (this.drag != null) throw new IllegalStateException("Tried to hand offer to an occupied PieceBank");
+    public int handOff(PieceDraggable draggable, AnimationManager.AnimationSpeed speed) {
+        if (this.drag != null) throw new IllegalStateException("Tried to hand off to an occupied PieceOfferingHolder");
 
         this.drag = draggable;
         this.drag.setTransform(new TransformData(this.transform.getPosition().add(dimensions.x/2, dimensions.y/2), this.drag.getBaseTransform().getRotation()));
@@ -172,7 +195,8 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
         this.drag.setDimensions(new PVector(newWidth, newWidth, newWidth*PieceDrawable.HEIGHT_TO_WIDTH_RATIO));
         this.drag.addTarget(board);
         this.drag.addCallback(boardPlaceCallback);
-        this.drag.returnToBase(HANDOFF_MILLIS);
-        return HANDOFF_MILLIS;
+        int time = this.drag.returnToBase(speed);
+
+        return time;
     }
 }

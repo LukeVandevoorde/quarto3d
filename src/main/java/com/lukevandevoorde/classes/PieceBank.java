@@ -8,6 +8,8 @@ import java.util.Collection;
 import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.core.PVector;
+
+import com.lukevandevoorde.classes.AnimationManager.AnimationSpeed;
 import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
@@ -73,7 +75,7 @@ public class PieceBank extends Drawable {
         this.transform.set(newTransform);
         for (PieceDraggable piece: drags) {
             piece.setTransform(new TransformData(pieceMapper(piece.getPayload()).add(transform.getPosition()).add(paddedPosition), new PVector(BASE_TILT,0,0)));
-            piece.returnToBase(0);
+            piece.returnToBase(new AnimationSpeed(Float.MAX_VALUE, Float.MAX_VALUE));
         }
     }
 

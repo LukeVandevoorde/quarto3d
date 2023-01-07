@@ -8,6 +8,7 @@ import processing.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.stream.Collectors;
 
@@ -74,8 +75,8 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
     public Main() {
         TIME_KEEPER = this;
         UI_COORDINATOR = this;
-        minPriority = Integer.MIN_VALUE;
-        maxPriority = Integer.MAX_VALUE;
+        minPriority = 0;
+        maxPriority = 1;
         dragging = false;
         clickedAndWaitingForDoubleClick = false;
         mouseMovedSinceClicked = false;
@@ -90,9 +91,9 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
     }
 
     public void setup() {
-        boardViewport = new Viewport(createGraphics(width, height, P3D), new PVector(0, 0), 0.26f*PI);
-        userView = new TransformData(new PVector(boardViewport.width()/2, 3*boardViewport.height()/5, -boardViewport.height()/2), new PVector(-THIRD_PI, 0, 0));
-        selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/2), new PVector(0, 0, 0));
+        boardViewport = new Viewport(createGraphics(width, height, P3D), new PVector(0, 0), 0.27f*PI);
+        userView = new TransformData(new PVector(boardViewport.width()/2, 3*boardViewport.height()/5, -boardViewport.height()), new PVector(-THIRD_PI, 0, 0));
+        selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()), new PVector(0, 0, 0));
 
         gameManager = new GameFlowManager();
 
@@ -105,55 +106,56 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
         // Accept taken care of by GameFlowManager
         Draggable.CallBack placingCallback = new Draggable.CallBack() {
             public void onStartDrag() {
-                quartoBoard.enterSelectView();
+                quartoBoard.enterSelectView(UIPlayer.SELECT_SPEED);
             }
 
             public void onReject() {
-                quartoBoard.enterUserView();
+                quartoBoard.enterUserView(UIPlayer.USER_VIEW_SPEED);
             }
         };
 
         p1PieceOfferingHolder = new PieceOfferingHolder(boardViewport,
                                                         new TransformData(new PVector(0, (1-holderHeightFrac)*boardViewport.height()), new PVector()),
                                                         new PVector(widthFrac*boardViewport.width(), holderHeightFrac*boardViewport.height()),
-                                                        quartoBoard, placingCallback,true,"P1");
+                                                        quartoBoard, placingCallback, Player.P1_COLOR, Player.P2_COLOR, true, "P1");
         p2PieceOfferingHolder = new PieceOfferingHolder(boardViewport,
                                                         new TransformData(new PVector((1-widthFrac)*boardViewport.width(), (1-holderHeightFrac)*boardViewport.height()), new PVector()),
                                                         new PVector(widthFrac*boardViewport.width(), holderHeightFrac*boardViewport.height()),
-                                                        quartoBoard, placingCallback,false,"P2");
+                                                        quartoBoard, placingCallback, Player.P2_COLOR, Player.P1_COLOR, false, "P2");
         
-        Player p1 = new UIPlayer(quartoBoard, p1PieceOfferingHolder, p2PieceOfferingHolder);
-        // Player p2 = new UIPlayer(quartoBoard, p2PieceOfferingHolder, p1PieceOfferingHolder);
-        Player p2 = new ComputerPlayer();
-        gameManager.registerPlayer(p1, GameFlowManager.P1);
-        gameManager.registerPlayer(p2, GameFlowManager.P2);
-        
-        DragTarget<QuartoPiece>[] holders = new PieceOfferingHolder[]{p1PieceOfferingHolder, p2PieceOfferingHolder};
+        List<DragTarget<QuartoPiece>> holders = Arrays.asList(new PieceOfferingHolder[]{p1PieceOfferingHolder, p2PieceOfferingHolder});
 
         // Pieces without holes
         leftPieceBank = new PieceBank(boardViewport,
                                         new TransformData(new PVector(), new PVector()), 
                                         new PVector(widthFrac*boardViewport.width(), (1-holderHeightFrac)*boardViewport.height()),
                                         gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> p.getFilled()).collect(Collectors.toSet()),
-                                        Arrays.asList(holders));
+                                        holders);
 
         // Pieces with holes
         rightPieceBank = new PieceBank(boardViewport,
                                         new TransformData(new PVector((1-widthFrac)*boardViewport.width(), 0, 0), new PVector()),
                                         new PVector(widthFrac*boardViewport.width(), (1-holderHeightFrac)*boardViewport.height()),
                                         gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> !p.getFilled()).collect(Collectors.toSet()),
-                                        Arrays.asList(holders));
+                                        holders);
 
+        // Player p1 = new UIPlayer(quartoBoard, p1PieceOfferingHolder, p2PieceOfferingHolder);
+        Player p1 = new ComputerPlayer();
+
+        // Player p2 = new UIPlayer(quartoBoard, p2PieceOfferingHolder, p1PieceOfferingHolder);
+        Player p2 = new ComputerPlayer();
+        
+        gameManager.registerPlayer(p1, GameFlowManager.P1);
+        gameManager.registerPlayer(p2, GameFlowManager.P2);
+        gameManager.registerPieceOfferingHolder(p1PieceOfferingHolder, GameFlowManager.P1);
+        gameManager.registerPieceOfferingHolder(p2PieceOfferingHolder, GameFlowManager.P2);
         HashSet<PieceBank> banks = new HashSet<>();
         banks.add(leftPieceBank);
         banks.add(rightPieceBank);
         gameManager.registerPieceBanks(banks);
-        gameManager.registerPieceOfferingHolder(p1PieceOfferingHolder, GameFlowManager.P1);
-        gameManager.registerPieceOfferingHolder(p2PieceOfferingHolder, GameFlowManager.P2);
         gameManager.startGame();
 
         PGraphics g = boardViewport.getGraphics();
-
         g.textAlign(LEFT);
         float size = g.height/30;
         g.textSize(size);

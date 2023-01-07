@@ -80,6 +80,7 @@ public class GameFlowManager {
     }
 
     public void startGame() {
+        holders[P2].indicateDrop();
         players[P1].selectPieceToOffer(this, quartoBoard);
     }
 
@@ -88,7 +89,6 @@ public class GameFlowManager {
     }
 
     public void notifyPlacement(Player player, QuartoPiece quartoPiece, int row, int col) {
-        System.out.println(turnState);
         if (turnState != TurnState.P1_PLACING && turnState != TurnState.P2_PLACING) throw new IllegalStateException("Tried to place during offer phase or win state");
         if (turnState == TurnState.P1_PLACING && player == players[P2] || turnState == TurnState.P2_PLACING && player == players[P1]) throw new IllegalStateException("Players played out of turn");
         if (quartoPiece != offering) throw new IllegalStateException("Tried to place the wrong piece");
@@ -96,42 +96,47 @@ public class GameFlowManager {
         quartoBoard.placePiece(row, col, quartoPiece);
 
         TurnState selectState, winState;
-        PieceOfferingHolder holder;
+        PieceOfferingHolder sourceHolder, destinationHolder;
+        int winColor;
 
         if (turnState == TurnState.P1_PLACING) {
             selectState = TurnState.P1_OFFERING;
             winState = TurnState.P1_WON;
-            holder = holders[P1];
+            sourceHolder = holders[P1];
+            destinationHolder = holders[P2];
+            winColor = Player.P1_COLOR;
         } else {
             selectState = TurnState.P2_OFFERING;
             winState = TurnState.P2_WON;
-            holder = holders[P2];
+            sourceHolder = holders[P2];
+            destinationHolder = holders[P1];
+            winColor = Player.P2_COLOR;
         }
 
-        int timeToPlacementAnimation = boardDrawable.enterSelectView();
+        int timeToPlacementAnimation = boardDrawable.enterSelectView(player.selectViewSpeed());
 
         GameFlowManager manager = this;
         TimeKeeper.Job delayPlacementAnimation = new TimeKeeper.Job() {
             public void execute() {
-                PieceDraggable draggable = holder.getPieceDraggable();
-                holder.remove();
-                boardDrawable.handOff(draggable, row, col);
-                int timeToView = boardDrawable.enterUserView();
-                System.out.println(timeToView);
-
+                PieceDraggable draggable = sourceHolder.getPieceDraggable();
+                sourceHolder.remove();
+                sourceHolder.hideRemovalIndicator(boardDrawable.handOff(draggable, row, col, player.dropSpeed()));
+                int timeToView = boardDrawable.enterUserView(player.userViewSpeed());
+                
                 if (quartoBoard.won()) {
                     turnState = winState;
-                    if (boardDrawable != null) boardDrawable.highlightWin(quartoBoard.getWinningCoords());
+                    if (boardDrawable != null) boardDrawable.highlightWin(quartoBoard.getWinningCoords(), winColor);
                 } else {
                     turnState = selectState;
 
                     TimeKeeper.Job delaySelection = new TimeKeeper.Job() {
                         public void execute() {
+                            destinationHolder.indicateDrop();
                             player.selectPieceToOffer(manager, quartoBoard);
                         }
                     };
 
-                    Main.TIME_KEEPER.scheduleJob(timeToView + 500, delaySelection);
+                    Main.TIME_KEEPER.scheduleJob(timeToView, delaySelection);
                 }
             }
         };
@@ -140,7 +145,6 @@ public class GameFlowManager {
     }
 
     public void notifyOffering(Player player, QuartoPiece offering) {
-        System.out.println(turnState);
         if (turnState != TurnState.P1_OFFERING && turnState != TurnState.P2_OFFERING) throw new IllegalStateException("Tried to offer during placement phase or win state");
         if (turnState == TurnState.P1_OFFERING && player == players[P2] || turnState == TurnState.P2_OFFERING && player == players[P1]) throw new IllegalStateException("Players offered out of turn");
 
@@ -171,11 +175,12 @@ public class GameFlowManager {
 
         if (drag == null) throw new IllegalStateException("Tried to offer a piece that doesn't exist");
         bank.withdraw(drag);
-        int timeToPlacement = holder.handOff(drag);
+        int timeToPlacement = holder.handOff(drag, player.pieceOfferingSpeed());
 
         GameFlowManager manager = this;
         TimeKeeper.Job delayPlacement = new TimeKeeper.Job() {
             public void execute() {
+                holder.switchIndication();
                 otherPlayer.choosePlacement(manager, quartoBoard, offering);
             }
         };
