@@ -91,7 +91,7 @@ public class GameFlowManager {
     public void notifyPlacement(Player player, QuartoPiece quartoPiece, int row, int col) {
         if (turnState != TurnState.P1_PLACING && turnState != TurnState.P2_PLACING) throw new IllegalStateException("Tried to place during offer phase or win state");
         if (turnState == TurnState.P1_PLACING && player == players[P2] || turnState == TurnState.P2_PLACING && player == players[P1]) throw new IllegalStateException("Players played out of turn");
-        if (quartoPiece != offering) throw new IllegalStateException("Tried to place the wrong piece");
+        if (!quartoPiece.equals(offering)) throw new IllegalStateException("Tried to place the wrong piece");
 
         quartoBoard.placePiece(row, col, quartoPiece);
 

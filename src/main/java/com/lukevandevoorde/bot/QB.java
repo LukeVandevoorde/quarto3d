@@ -66,6 +66,7 @@ public class QB {
     // performs absolutely 0 checks on legality and bounds
     // returns true if placing piece in the given position results in a win
     public boolean move(byte piece, int row, int col) {
+        if (!remainingPieces.contains(piece)) throw new IllegalStateException("fooey");
         board[row][col] = piece;
 
         boolean rowHazardous = (rowHazards[row] &= piece) != 0;
@@ -90,6 +91,7 @@ public class QB {
 
     // if not a diag, prevDiagHazard is disregarded
     public void undo(int row, int col, byte prevRowHazard, byte prevColHazard, byte prevDiagHazard) {
+        if (remainingPieces.contains(board[row][col])) throw new IllegalStateException("weird");
         remainingPieces.add(board[row][col]);
         board[row][col] = 0;
         rowHazards[row] = prevRowHazard;

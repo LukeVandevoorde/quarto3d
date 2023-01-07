@@ -58,6 +58,15 @@ public class QuartoPiece {
         return (piece & 1) | ((piece & 4) >> 1) | ((piece & 16) >> 2) | ((piece & 64) >> 3);
     }
 
+    public byte asByte() {
+        byte p = 0;
+        p |= tall ? 1 : 2;
+        p |= light ? 4 : 8;
+        p |= square ? 16 : 32;
+        p |= filled ? 64 : 128;
+        return p;
+    }
+
     @Override
     public int hashCode() {
         byte p = 0;

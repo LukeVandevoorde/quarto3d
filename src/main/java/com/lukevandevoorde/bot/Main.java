@@ -4,9 +4,19 @@ import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class Main {
     public static void main(String[] args) {
-        byte b = QuartoPiece.quartoPiece(false, false, false, false);
-        System.out.println(b);
+        // byte b = QuartoPiece.quartoPiece(false, false, false, false);
+        // System.out.println(b);
         // testIterTimes();
+
+        QB board = new QB();
+        byte p1 = QuartoPiece.quartoPiece(true, false, false, false);
+        byte p2 = QuartoPiece.quartoPiece(true, true, false, false);
+
+        board.move(p1, 1, 1);
+
+        Bot bot = new Bot(3);
+        Move move = bot.nextMove(board, p2);
+        System.out.println(move);
     }
 
     // public static void time(int numReps, Function)

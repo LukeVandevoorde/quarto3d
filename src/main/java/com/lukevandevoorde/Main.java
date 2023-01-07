@@ -142,8 +142,8 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
         Player p1 = new UIPlayer(quartoBoard, p1PieceOfferingHolder, p2PieceOfferingHolder);
         // Player p1 = new ComputerPlayer();
 
-        Player p2 = new UIPlayer(quartoBoard, p2PieceOfferingHolder, p1PieceOfferingHolder);
-        // Player p2 = new ComputerPlayer();
+        // Player p2 = new UIPlayer(quartoBoard, p2PieceOfferingHolder, p1PieceOfferingHolder);
+        Player p2 = new ComputerPlayer();
         
         gameManager.registerPlayer(p1, GameFlowManager.P1);
         gameManager.registerPlayer(p2, GameFlowManager.P2);

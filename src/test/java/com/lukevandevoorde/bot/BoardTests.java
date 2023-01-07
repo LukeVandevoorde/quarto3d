@@ -194,6 +194,8 @@ public class BoardTests {
         byte[] h2 = board.getHazards(0, 3);
         board.move(p4, 0, 3);
         
+        assertEquals(12, board.remainingPieces().size());
+
         byte[] hazards;
         int[] counts;
         // Undo 1
@@ -206,6 +208,7 @@ public class BoardTests {
         assertEquals(3, counts[0]);
         assertEquals(0, counts[1]);
         assertEquals(0, counts[2]);
+        assertEquals(13, board.remainingPieces().size());
 
         // Undo 2
         board.undo(0, 2, h1[0], h1[1], (byte)0);
@@ -215,6 +218,7 @@ public class BoardTests {
         assertEquals((byte)(-1), hazards[1]);
         assertEquals(2, counts[0]);
         assertEquals(0, counts[1]);
+        assertEquals(14, board.remainingPieces().size());
     }
 
 }
