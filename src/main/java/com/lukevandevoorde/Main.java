@@ -92,8 +92,8 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
 
     public void setup() {
         boardViewport = new Viewport(createGraphics(width, height, P3D), new PVector(0, 0), 0.27f*PI);
-        userView = new TransformData(new PVector(boardViewport.width()/2, 3*boardViewport.height()/5, -boardViewport.height()), new PVector(-THIRD_PI, 0, 0));
-        selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()), new PVector(0, 0, 0));
+        userView = new TransformData(new PVector(boardViewport.width()/2, 3*boardViewport.height()/5, -boardViewport.height()/2), new PVector(-THIRD_PI, 0, 0));
+        selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/2), new PVector(0, 0, 0));
 
         gameManager = new GameFlowManager();
 
@@ -139,11 +139,11 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
                                         gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> !p.getFilled()).collect(Collectors.toSet()),
                                         holders);
 
-        // Player p1 = new UIPlayer(quartoBoard, p1PieceOfferingHolder, p2PieceOfferingHolder);
-        Player p1 = new ComputerPlayer();
+        Player p1 = new UIPlayer(quartoBoard, p1PieceOfferingHolder, p2PieceOfferingHolder);
+        // Player p1 = new ComputerPlayer();
 
-        // Player p2 = new UIPlayer(quartoBoard, p2PieceOfferingHolder, p1PieceOfferingHolder);
-        Player p2 = new ComputerPlayer();
+        Player p2 = new UIPlayer(quartoBoard, p2PieceOfferingHolder, p1PieceOfferingHolder);
+        // Player p2 = new ComputerPlayer();
         
         gameManager.registerPlayer(p1, GameFlowManager.P1);
         gameManager.registerPlayer(p2, GameFlowManager.P2);

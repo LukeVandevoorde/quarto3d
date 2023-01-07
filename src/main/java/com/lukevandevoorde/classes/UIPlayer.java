@@ -6,10 +6,10 @@ import com.lukevandevoorde.quartolayer.QuartoBoardState;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class UIPlayer extends Player {
-    
+
     public static final AnimationSpeed SELECT_SPEED = new AnimationSpeed(2500, 3.5f);
     public static final AnimationSpeed USER_VIEW_SPEED = new AnimationSpeed(1700, 2.5f);
-    public static final AnimationSpeed OFFERING_SPEED = new AnimationSpeed(800, 1);
+    public static final AnimationSpeed OFFERING_SPEED = new AnimationSpeed(800, 1.4f);
     public static final AnimationSpeed DROP_SPEED = new AnimationSpeed(3000, 3.5f);
 
     private BoardDrawable boardDrawable;

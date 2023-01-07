@@ -6,7 +6,7 @@ import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public abstract class Player {
 
-    public static final int P1_COLOR = 0xFF33DD33;
+    public static final int P1_COLOR = 0xFF33BB33;
     public static final int P2_COLOR = 0xFF3333DD;
 
     // When done, notifies manager of placement

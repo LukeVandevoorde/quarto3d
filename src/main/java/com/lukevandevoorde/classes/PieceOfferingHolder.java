@@ -22,7 +22,8 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
         @Override
         public void draw() {
             PGraphics graphics = viewport.getGraphics();
-            graphics.push();
+            graphics.pushMatrix();
+            graphics.pushStyle();
             transform.transform(graphics);
             graphics.fill(color);
             graphics.stroke(color);
@@ -32,7 +33,8 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
             graphics.vertex(-dimensions.x/2, dimensions.y, 0);
             graphics.vertex(-dimensions.x/2, -dimensions.y, 0);
             graphics.endShape();
-            graphics.pop();
+            graphics.popMatrix();
+            graphics.popStyle();
         }
 
         @Override
@@ -43,7 +45,7 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
     
     private static final float PADDING_PROP = 0.025f;
     private static final PVector ZERO_SIZE = new PVector();
-    private static final int FADE_MILLIS = 200;
+    private static final int FADE_MILLIS = 165;
 
     private PieceDraggable drag;
     private DragTarget<QuartoPiece> board;
@@ -65,6 +67,7 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
         this.board = board;
         this.boardPlaceCallback = boardPlaceCallback;
         this.uiDropEnabled = false;
+        this.ownerColor = ownerColor;
         this.label = label;
         this.paddedPosition = new PVector(dimensions.x * PADDING_PROP, dimensions.y * PADDING_PROP);
         this.paddedDimensions = new PVector(dimensions.x * (1 - 2*PADDING_PROP), dimensions.y * (1 - 2*PADDING_PROP), PADDING_PROP*Math.min(dimensions.x, dimensions.y));
@@ -107,7 +110,7 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
         dropIndicator.animate(dropTransform, ZERO_SIZE, FADE_MILLIS);
         removeIndicator.animate(dropTransform, ZERO_SIZE, FADE_MILLIS);
         removeIndicator.animate(dropTransform, indicatorDimensions, FADE_MILLIS);
-        removeIndicator.animate(removeTransform, indicatorDimensions, 350);
+        removeIndicator.animate(removeTransform, indicatorDimensions, 325);
     }
 
     public void hideRemovalIndicator(int timeToInvisible) {
@@ -144,16 +147,16 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
 
         this.transform.transform(graphics);
 
+        dropIndicator.draw();
+        removeIndicator.draw();
+
         graphics.stroke(this.ownerColor);
         graphics.fill(this.ownerColor);
+        graphics.text(label, labelPosition.x, labelPosition.y);
         graphics.noFill();
         graphics.strokeWeight(5);
         graphics.rect(paddedPosition.x, paddedPosition.y, paddedDimensions.x, paddedDimensions.y, paddedDimensions.z);
         graphics.textSize(labelPosition.z);
-        graphics.text(label, labelPosition.x, labelPosition.y);
-
-        dropIndicator.draw();
-        removeIndicator.draw();
 
         graphics.pop();
     }

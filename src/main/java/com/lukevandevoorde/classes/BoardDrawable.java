@@ -232,9 +232,7 @@ public class BoardDrawable extends Drawable implements Draggable<Void>, DragTarg
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 int index = 4*i+j;
-                if (index == hoverIndex) {
-                    graphics.fill(25, 240, 30);
-                } else if (index == lastPlacementIndex) {
+                if (index == hoverIndex || index == lastPlacementIndex) {
                     graphics.fill(230, 220, 210);
                 } else if (windices != null && windices.contains(index)) {
                     graphics.fill(winHighlightColor);
