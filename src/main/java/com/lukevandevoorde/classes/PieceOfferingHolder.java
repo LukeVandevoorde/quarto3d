@@ -52,7 +52,6 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
     private Draggable.CallBack boardPlaceCallback;
 
     private boolean uiDropEnabled;
-    private UIPlayer notify;
 
     private int ownerColor;
     private PVector paddedPosition, paddedDimensions;
@@ -118,11 +117,6 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
         removeIndicator.animate(removeTransform, ZERO_SIZE, FADE_MILLIS);
     }
 
-    // Will notify player when a piece is dropped into this holder
-    public void setListener(UIPlayer player) {
-        this.notify = player;
-    }
-
     public void enableUIDrop() {
         this.uiDropEnabled = true;
     }
@@ -185,7 +179,7 @@ public class PieceOfferingHolder extends Drawable implements DragTarget<QuartoPi
     @Override
     public boolean accept(Draggable<QuartoPiece> draggable) {
         if (!willAccept(draggable)) return false;
-        if (this.notify != null) notify.notifyOffering(draggable.getPayload());
+        if (UIPlayer.notifyPlayer != null) UIPlayer.notifyPlayer.notifyOffering(draggable.getPayload());
         return true;
     }
 

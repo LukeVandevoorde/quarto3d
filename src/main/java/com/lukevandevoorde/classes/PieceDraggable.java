@@ -170,13 +170,11 @@ public class PieceDraggable extends Drawable implements Draggable<QuartoPiece>, 
     }
 
     @Override
-    public void onClick() {
-        System.out.println("\tOn Click");
-    }
+    public void onClick() {}
 
     @Override
     public void onDoubleClick() {
-        System.out.println("\tOn Double Click");
+        if (UIPlayer.notifyPlayer != null) UIPlayer.notifyPlayer.notifyOffering(this.piece);
     }
 
     @Override

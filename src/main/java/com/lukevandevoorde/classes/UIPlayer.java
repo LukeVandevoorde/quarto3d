@@ -7,6 +7,8 @@ import com.lukevandevoorde.quartolayer.QuartoPiece;
 
 public class UIPlayer extends Player {
 
+    public static UIPlayer notifyPlayer;
+
     public static final AnimationSpeed SELECT_SPEED = new AnimationSpeed(2500, 3.5f);
     public static final AnimationSpeed USER_VIEW_SPEED = new AnimationSpeed(1700, 2.5f);
     public static final AnimationSpeed OFFERING_SPEED = new AnimationSpeed(800, 1.4f);
@@ -41,12 +43,13 @@ public class UIPlayer extends Player {
     public void selectPieceToOffer(GameFlowManager manager, QuartoBoardState board) {
         Main.UI_COORDINATOR.setMaxPriority(2);
         this.manager = manager;
+        UIPlayer.notifyPlayer = this;
         this.offerDropLocation.enableUIDrop();
-        this.offerDropLocation.setListener(this);
     }
 
     public void notifyOffering(QuartoPiece piece) {
         Main.UI_COORDINATOR.setMaxPriority(1);
+        UIPlayer.notifyPlayer = null;
         this.offerDropLocation.disableUIDrop();
         this.manager.notifyOffering(this, piece);
     }
