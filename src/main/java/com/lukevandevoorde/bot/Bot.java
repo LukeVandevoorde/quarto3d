@@ -13,24 +13,21 @@ public class Bot {
         this.timeLimit = timeLimit * (float)Math.pow(10, 9);
     }
 
-    public Move nextMove(QB board, byte pieceToPlace) {
+    public ArrayList<Move> bMoves(QB board, byte pieceToPlace, int depth) {
         this.startTime = System.nanoTime();
 
-        System.out.println("Remaining pieces: " + board.remainingPieces.size());
-
-        Move bestMove = new Move(-1, -1, -1, board.remainingPieces().iterator().next());
         int d = 0;
 
+        ArrayList<Move> res = new ArrayList<>();
         while (d <= 15) {
             try {
                 d += 1;
                 
                 ArrayList<Move> bestMoves = new ArrayList<>();
-                int bestScore = Integer.MIN_VALUE;
+                int bestScore = Integer.MIN_VALUE, score;
                 bestMoves.add(new Move(bestScore, -1, -1, (byte)-1));
 
                 QB qb;
-                Move move;
 
                 placeLoop: for (int row = -1; ++row < 4;) {
                     for (int col = -1; ++col < 4;) {
@@ -52,13 +49,76 @@ public class Bot {
                         
                         // Iterate over remaining pieces
                         for (byte pieceToOffer: qb.remainingPieces) {
-                            move = new Move(alphabeta(false, qb, pieceToOffer, d-1).score, row, col, pieceToOffer);
-                            if (move.score > bestScore) {
-                                bestScore = move.score;
+                            score = alphabeta(false, qb, pieceToOffer, d-1, bestScore, Integer.MAX_VALUE);
+                            if (score > bestScore) {
+                                bestScore = score;
                                 bestMoves.clear();
-                                bestMoves.add(new Move(move.score, row, col, pieceToOffer));
-                            } else if (move.score == bestScore) {
-                                bestMoves.add(new Move(move.score, row, col, pieceToOffer));
+                                bestMoves.add(new Move(score, row, col, pieceToOffer));
+                            } else if (score == bestScore) {
+                                bestMoves.add(new Move(score, row, col, pieceToOffer));
+                            }
+                        }
+                    }
+                }
+
+                res = bestMoves;
+
+                if (bestScore <= -10000 || bestScore >= 10000) {
+                    break;
+                };
+            } catch (TimeoutException e) {
+                break;
+            }
+        }
+
+        return res;
+    }
+
+    public Move nextMove(QB board, byte pieceToPlace) {
+        this.startTime = System.nanoTime();
+
+        System.out.println("Remaining pieces: " + board.remainingPieces.size());
+
+        Move bestMove = new Move(-1, -1, -1, board.remainingPieces().iterator().next());
+        int d = 0;
+
+        while (d <= 15) {
+            try {
+                d += 1;
+                
+                ArrayList<Move> bestMoves = new ArrayList<>();
+                int bestScore = Integer.MIN_VALUE, score;
+                bestMoves.add(new Move(bestScore, -1, -1, (byte)-1));
+
+                QB qb;
+
+                placeLoop: for (int row = -1; ++row < 4;) {
+                    for (int col = -1; ++col < 4;) {
+                        if (board.board[row][col] != 0) continue;
+                        qb = new QB(board);
+                        // Perform move and check win
+                        if (qb.move(pieceToPlace, row, col)) {
+                            bestMoves.clear();
+                            bestMoves.add(new Move(10000 + d, row, col, (byte)-1));
+                            break placeLoop;
+                        }
+
+                        // Tie
+                        if (qb.remainingPieces.size() == 0) {
+                            bestMoves.clear();
+                            bestMoves.add(new Move(0, row, col, (byte)-1));
+                            break placeLoop;
+                        }
+                        
+                        // Iterate over remaining pieces
+                        for (byte pieceToOffer: qb.remainingPieces) {
+                            score = alphabeta(false, qb, pieceToOffer, d-1, bestScore, Integer.MAX_VALUE);
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestMoves.clear();
+                                bestMoves.add(new Move(score, row, col, pieceToOffer));
+                            } else if (score == bestScore) {
+                                bestMoves.add(new Move(score, row, col, pieceToOffer));
                             }
                         }
                     }
@@ -81,13 +141,12 @@ public class Bot {
         return bestMove;
     }
 
-    private Move alphabeta(boolean maximizing, QB board, byte pieceToPlace, int depth) throws TimeoutException {
-        if (depth <= 0) return new Move(0, -1, -1, (byte)-1);
+    private int alphabeta(boolean maximizing, QB board, byte pieceToPlace, int depth, int alpha, int beta) throws TimeoutException {
+        if (depth <= 0) return 0;
         else if (System.nanoTime() - this.startTime >= this.timeLimit) throw new TimeoutException("Out of time");
         
         if (maximizing) {
-            // int bestScore = Integer.MIN_VALUE, score, bestRow = -1, bestCol = -1;
-            Move bestMove = new Move(Integer.MIN_VALUE, -1, -1, (byte)-1), move;
+            int bestScore = Integer.MIN_VALUE, score;
             QB qb;
             for (int row = -1; ++row < 4;) {
                 for (int col = -1; ++col < 4;) {
@@ -96,58 +155,50 @@ public class Bot {
                     qb = new QB(board);
                     
                     // Perform move and check win
-                    if (qb.move(pieceToPlace, row, col)) {
-                        return new Move(10000 + depth, row, col, (byte)-1);
-                    };
-                    
+                    if (qb.move(pieceToPlace, row, col)) return 10000 + depth;
                     // Tie
-                    if (qb.remainingPieces.size() == 0) {
-                        return new Move(0, row, col, (byte)-1);
-                    };
-                    
+                    if (qb.remainingPieces.size() == 0) return 0;
+
                     // Iterate over remaining pieces
                     for (byte pieceToOffer: qb.remainingPieces) {
-                        move = new Move(alphabeta(false, qb, pieceToOffer, depth-1).score, row, col, pieceToOffer);
-                        if (move.score > bestMove.score) {
-                            bestMove = new Move(move.score, row, col, pieceToOffer);
-                        }
+                        score = alphabeta(false, qb, pieceToOffer, depth-1, alpha, beta);
+
+                        if (score > beta) return score;
+                        else if (score > bestScore) bestScore = score;
+
+                        alpha = Math.max(alpha, score);
                     }
                 }
             }
 
-            if (bestMove.pieceToOffer == -1) throw new IllegalStateException("Bad");
-            return bestMove;
+            return bestScore;
         } else {
-            Move worstMove = new Move(Integer.MAX_VALUE, -1, -1, (byte)-1), move;
+            int worstScore = Integer.MAX_VALUE, score;
             QB qb;
             for (int row = -1; ++row < 4;) {
                 for (int col = -1; ++col < 4;) {
                     if (board.board[row][col] != 0) continue;
                     
                     qb = new QB(board);
-                    
+
                     // Perform move and check win
-                    if (qb.move(pieceToPlace, row, col)) {
-                        return new Move(-10000 - depth, row, col, (byte)-1);
-                    };
-                    
+                    if (qb.move(pieceToPlace, row, col)) return -10000 - depth;
                     // Tie
-                    if (qb.remainingPieces.size() == 0) {
-                        return new Move(0, row, col, (byte)-1);
-                    };
-                    
+                    if (qb.remainingPieces.size() == 0) return 0;
+
                     // Iterate over remaining pieces
                     for (byte pieceToOffer: qb.remainingPieces) {
-                        move = alphabeta(true, qb, pieceToOffer, depth-1);
-                        if (move.score < worstMove.score) {
-                            worstMove = new Move(move.score, row, col, pieceToOffer);
-                        }
+                        score = alphabeta(true, qb, pieceToOffer, depth-1, alpha, beta);
+
+                        if (score < alpha) return score;
+                        else if (score < worstScore) worstScore = score;
+                        
+                        beta = Math.min(beta, score);
                     }
                 }
             }
 
-            if (worstMove.pieceToOffer == -1) throw new IllegalStateException("Bad");
-            return worstMove;
+            return worstScore;
         }
     }
 
