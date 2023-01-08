@@ -86,7 +86,7 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
     }
 
     public void settings() {
-        fullScreen(P2D);
+        fullScreen(P3D);
         smooth(4);
     }
 
@@ -139,8 +139,8 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
                                         gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> !p.getFilled()).collect(Collectors.toSet()),
                                         holders);
 
-        Player p1 = new UIPlayer(quartoBoard, p1PieceOfferingHolder, p2PieceOfferingHolder);
-        // Player p1 = new ComputerPlayer();
+        // Player p1 = new UIPlayer(quartoBoard, p1PieceOfferingHolder, p2PieceOfferingHolder);
+        Player p1 = new ComputerPlayer();
 
         // Player p2 = new UIPlayer(quartoBoard, p2PieceOfferingHolder, p1PieceOfferingHolder);
         Player p2 = new ComputerPlayer();

@@ -30,7 +30,7 @@ public class QuartoPiece {
     }
 
     public static HashSet<Byte> allBytes() {
-        HashSet<Byte> pieces = new HashSet<Byte>();
+        HashSet<Byte> pieces = new HashSet<Byte>(16);
         for (int i = 0; i < 16; i++) {
             pieces.add(quartoPiece((i/8)%2==0, (i/4)%2==0, (i/2)%2==0, i%2==0));
         }

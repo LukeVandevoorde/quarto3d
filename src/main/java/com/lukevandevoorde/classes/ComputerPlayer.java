@@ -14,14 +14,16 @@ public class ComputerPlayer extends Player {
     public static final AnimationSpeed OFFERING_SPEED = new AnimationSpeed(1000, 1);
     public static final AnimationSpeed DROP_SPEED = new AnimationSpeed(1000, 1);
 
+    private Bot bot;
     private Move move;
 
-    public ComputerPlayer() {}
+    public ComputerPlayer() {
+        move = new Move(0, 0, 0, QuartoPiece.quartoPiece(new QuartoPiece(false, true, false, true)));
+        bot = new Bot(1.5f);
+    }
 
     @Override
     public void choosePlacement(GameFlowManager manager, QuartoBoardState board, QuartoPiece pieceToPlace) {
-
-        Bot bot = new Bot(3);
         QB qb = new QB();
         for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 4; col++) {
@@ -30,8 +32,6 @@ public class ComputerPlayer extends Player {
                 }
             }
         }
-
-        if (qb.remainingPieces().size() != board.getRemainingPieces().size()) throw new IllegalStateException("gahh");
 
         ComputerPlayer me = this;
 

@@ -33,19 +33,24 @@ public class QB {
         remainingPieces = QuartoPiece.allBytes();
     }
 
+    @SuppressWarnings("unchecked")
     public QB(QB other) {
         this.board = new byte[4][4];
         this.rowHazards = new byte[4];
         this.colHazards = new byte[4];
         this.rowCounts = new int[4];
         this.colCounts = new int[4];
-        this.remainingPieces = new HashSet<Byte>();
+        this.remainingPieces = (HashSet<Byte>) other.remainingPieces.clone();
 
         for (int i = 0; i < 4; i++) {
             this.rowHazards[i] = other.rowHazards[i];
             this.colHazards[i] = other.colHazards[i];
             this.rowCounts[i] = other.rowCounts[i];
             this.colCounts[i] = other.colCounts[i];
+            this.board[i][0] = other.board[i][0];
+            this.board[i][1] = other.board[i][1];
+            this.board[i][2] = other.board[i][2];
+            this.board[i][3] = other.board[i][3];
         }
         this.eqIdxDiagHazard = other.eqIdxDiagHazard;
         this.compIdxDiagHazard = other.compIdxDiagHazard;
@@ -53,10 +58,6 @@ public class QB {
         this.compIdxDiagCount = other.compIdxDiagCount;
 
         this.won = other.won;
-
-        for (byte b: other.remainingPieces) {
-            this.remainingPieces.add(b);
-        }
     }
 
     public boolean won() {
@@ -66,7 +67,8 @@ public class QB {
     // performs absolutely 0 checks on legality and bounds
     // returns true if placing piece in the given position results in a win
     public boolean move(byte piece, int row, int col) {
-        if (!remainingPieces.contains(piece)) throw new IllegalStateException("fooey");
+        if (board[row][col] != 0) throw new IllegalArgumentException("Piece already here");
+        if (!remainingPieces.contains(piece)) throw new IllegalArgumentException("Piece already played");
         board[row][col] = piece;
 
         boolean rowHazardous = (rowHazards[row] &= piece) != 0;
@@ -91,7 +93,6 @@ public class QB {
 
     // if not a diag, prevDiagHazard is disregarded
     public void undo(int row, int col, byte prevRowHazard, byte prevColHazard, byte prevDiagHazard) {
-        if (remainingPieces.contains(board[row][col])) throw new IllegalStateException("weird");
         remainingPieces.add(board[row][col]);
         board[row][col] = 0;
         rowHazards[row] = prevRowHazard;

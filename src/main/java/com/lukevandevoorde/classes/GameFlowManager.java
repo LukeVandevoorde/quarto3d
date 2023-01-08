@@ -17,7 +17,8 @@ public class GameFlowManager {
         P2_PLACING,
         P2_OFFERING,
         P1_WON,
-        P2_WON
+        P2_WON,
+        DRAW
     }
 
     @SuppressWarnings("unused")
@@ -32,6 +33,8 @@ public class GameFlowManager {
     private static final String P1_WON = "Player 1 Wins";
     @SuppressWarnings("unused")
     private static final String P2_WON = "Player 2 Wins";
+    @SuppressWarnings("unused")
+    private static final String DRAW = "The game is a draw";
 
     public static final int P1 = 0;
     public static final int P2 = 1;
@@ -126,6 +129,8 @@ public class GameFlowManager {
                 if (quartoBoard.won()) {
                     turnState = winState;
                     if (boardDrawable != null) boardDrawable.highlightWin(quartoBoard.getWinningCoords(), winColor);
+                } else if (quartoBoard.getRemainingPieces().size() == 0) {
+                    turnState = TurnState.DRAW;
                 } else {
                     turnState = selectState;
 

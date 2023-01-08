@@ -19,31 +19,6 @@ public class Main {
         System.out.println(move);
     }
 
-    // public static void time(int numReps, Function)
-
-    public static void testIterTimes() {
-        Count1 c = new Count1();
-
-        int numTimes = 10000000;
-        long r = 0;
-        long time = System.nanoTime();
-        for (int i = 0; i < numTimes; i++) {
-            r += c.smartCount();
-        }
-        time = System.nanoTime() - time;
-        System.out.println(r);
-        System.out.println("Time smart: " + (float)time/Math.pow(10, 9));
-
-        r = 0;
-        time = System.nanoTime();
-        for (int i = 0; i < numTimes; i++) {
-            r += c.smartestMaybeCount();
-        }
-        time = System.nanoTime() - time;
-        System.out.println(r);
-        System.out.println("Time smarter???: " + (float)time/Math.pow(10, 9));
-    }
-
     // public static void testMoveTimes() {
     //     long totalTime = 0;
     //     byte[] pieces = new byte[16];
