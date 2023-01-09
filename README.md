@@ -1,6 +1,12 @@
 # quarto3d
 
-to run:
+Get depenencies
 
+```
 mvn install
+```
+
+Run
+```
 mvn exec:java
+```
