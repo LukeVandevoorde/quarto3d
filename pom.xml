@@ -29,7 +29,7 @@
     <dependency>
       <groupId>com.github.micycle1</groupId>
       <artifactId>processing-core-4</artifactId>
-      <version>4.1.1</version>
+      <version>4.3</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.jogamp.jogl/jogl-all-main -->

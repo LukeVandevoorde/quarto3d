@@ -2,30 +2,16 @@ package com.lukevandevoorde;
 
 import processing.core.PApplet;
 import processing.core.PGraphics;
-import processing.core.PVector;
-import processing.event.MouseEvent;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 import java.util.PriorityQueue;
-import java.util.stream.Collectors;
+import java.util.Stack;
 
-import com.lukevandevoorde.classes.BoardDrawable;
-import com.lukevandevoorde.classes.ComputerPlayer;
-import com.lukevandevoorde.classes.GameFlowManager;
-import com.lukevandevoorde.classes.PieceBank;
-import com.lukevandevoorde.classes.PieceOfferingHolder;
-import com.lukevandevoorde.classes.Player;
-import com.lukevandevoorde.classes.TransformData;
-import com.lukevandevoorde.classes.UIPlayer;
-import com.lukevandevoorde.classes.Viewport;
+import com.lukevandevoorde.classes.GameScreen;
+import com.lukevandevoorde.classes.Screen;
 import com.lukevandevoorde.interfaces.Clickable;
 import com.lukevandevoorde.interfaces.Draggable;
-import com.lukevandevoorde.interfaces.DragTarget;
 import com.lukevandevoorde.interfaces.UICoordinator;
-import com.lukevandevoorde.quartolayer.QuartoPiece;
 import com.lukevandevoorde.interfaces.MouseInteractable;
 import com.lukevandevoorde.interfaces.TimeKeeper;
 
@@ -52,21 +38,15 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
 
     private PriorityQueue<ComparableJob> jobs;
 
-    private Viewport boardViewport;
-    private BoardDrawable quartoBoard;
-    private PieceBank leftPieceBank, rightPieceBank;
-    private PieceOfferingHolder p1PieceOfferingHolder, p2PieceOfferingHolder;
-    private TransformData userView, selectView;
-    private PVector hintPos;
-
-    private ArrayList<Clickable> clickables;
+    private Stack<Screen> screens;
+    private Stack<ArrayList<Clickable>> clickables;
     private Clickable selectedClickable;
-    private ArrayList<Draggable<?>> draggables;
+    private Stack<ArrayList<Draggable<?>>> draggables;
     private Draggable<?> selectedDraggable;
-    private int minPriority, maxPriority;
+    private Stack<Integer> minPriority, maxPriority;
     private boolean dragging, clickedAndWaitingForDoubleClick, mouseMovedSinceClicked;
 
-    private GameFlowManager gameManager;
+    
 
     public static void main(String[] args) {
         PApplet.main("com.lukevandevoorde.Main");
@@ -75,91 +55,31 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
     public Main() {
         TIME_KEEPER = this;
         UI_COORDINATOR = this;
-        minPriority = 0;
-        maxPriority = 1;
+
+        minPriority = new Stack<Integer>();
+        minPriority.push(0);
+        maxPriority = new Stack<Integer>();
+        maxPriority.push(1);
         dragging = false;
         clickedAndWaitingForDoubleClick = false;
         mouseMovedSinceClicked = false;
         jobs = new PriorityQueue<>();
-        draggables = new ArrayList<Draggable<?>>();
-        clickables = new ArrayList<Clickable>();
+        draggables = new Stack<ArrayList<Draggable<?>>>();
+        draggables.push(new ArrayList<Draggable<?>>());
+        clickables = new Stack<ArrayList<Clickable>>();
+        clickables.push(new ArrayList<Clickable>());
+
+        screens = new Stack<Screen>();
     }
 
     public void settings() {
-        fullScreen(P3D);
+        // fullScreen(P3D);
+        size(1920, 1080, P3D);
         smooth(4);
     }
 
     public void setup() {
-        boardViewport = new Viewport(createGraphics(width, height, P3D), new PVector(0, 0), 0.27f*PI);
-        userView = new TransformData(new PVector(boardViewport.width()/2, 3*boardViewport.height()/5, -boardViewport.height()/2), new PVector(-THIRD_PI, 0, 0));
-        selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/2), new PVector(0, 0, 0));
-
-        gameManager = new GameFlowManager();
-
-        float holderHeightFrac = 0.3f;
-        float widthFrac = 0.15f;
-
-        quartoBoard = new BoardDrawable(boardViewport, userView, selectView, BoardDrawable.recommendedDimensions((1-widthFrac)*boardViewport.width(), boardViewport.height()), gameManager.getQuartoBoardState());
-        gameManager.registerBoardDrawable(quartoBoard);
-
-        // Accept taken care of by GameFlowManager
-        Draggable.CallBack placingCallback = new Draggable.CallBack() {
-            public void onStartDrag() {
-                quartoBoard.enterSelectView(UIPlayer.SELECT_SPEED);
-            }
-
-            public void onReject() {
-                quartoBoard.enterUserView(UIPlayer.USER_VIEW_SPEED);
-            }
-        };
-
-        p1PieceOfferingHolder = new PieceOfferingHolder(boardViewport,
-                                                        new TransformData(new PVector(0, (1-holderHeightFrac)*boardViewport.height()), new PVector()),
-                                                        new PVector(widthFrac*boardViewport.width(), holderHeightFrac*boardViewport.height()),
-                                                        quartoBoard, placingCallback, Player.P1_COLOR, Player.P2_COLOR, true, "P1");
-        p2PieceOfferingHolder = new PieceOfferingHolder(boardViewport,
-                                                        new TransformData(new PVector((1-widthFrac)*boardViewport.width(), (1-holderHeightFrac)*boardViewport.height()), new PVector()),
-                                                        new PVector(widthFrac*boardViewport.width(), holderHeightFrac*boardViewport.height()),
-                                                        quartoBoard, placingCallback, Player.P2_COLOR, Player.P1_COLOR, false, "P2");
-        
-        List<DragTarget<QuartoPiece>> holders = Arrays.asList(new PieceOfferingHolder[]{p1PieceOfferingHolder, p2PieceOfferingHolder});
-
-        // Pieces without holes
-        leftPieceBank = new PieceBank(boardViewport,
-                                        new TransformData(new PVector(), new PVector()), 
-                                        new PVector(widthFrac*boardViewport.width(), (1-holderHeightFrac)*boardViewport.height()),
-                                        gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> p.getFilled()).collect(Collectors.toSet()),
-                                        holders);
-
-        // Pieces with holes
-        rightPieceBank = new PieceBank(boardViewport,
-                                        new TransformData(new PVector((1-widthFrac)*boardViewport.width(), 0, 0), new PVector()),
-                                        new PVector(widthFrac*boardViewport.width(), (1-holderHeightFrac)*boardViewport.height()),
-                                        gameManager.getQuartoBoardState().getRemainingPieces().stream().filter(p -> !p.getFilled()).collect(Collectors.toSet()),
-                                        holders);
-
-        // Player p1 = new UIPlayer(quartoBoard, p1PieceOfferingHolder, p2PieceOfferingHolder);
-        Player p1 = new ComputerPlayer();
-
-        // Player p2 = new UIPlayer(quartoBoard, p2PieceOfferingHolder, p1PieceOfferingHolder);
-        Player p2 = new ComputerPlayer();
-        
-        gameManager.registerPlayer(p1, GameFlowManager.P1);
-        gameManager.registerPlayer(p2, GameFlowManager.P2);
-        gameManager.registerPieceOfferingHolder(p1PieceOfferingHolder, GameFlowManager.P1);
-        gameManager.registerPieceOfferingHolder(p2PieceOfferingHolder, GameFlowManager.P2);
-        HashSet<PieceBank> banks = new HashSet<>();
-        banks.add(leftPieceBank);
-        banks.add(rightPieceBank);
-        gameManager.registerPieceBanks(banks);
-        gameManager.startGame();
-
-        PGraphics g = boardViewport.getGraphics();
-        g.textAlign(LEFT);
-        float size = g.height/30;
-        g.textSize(size);
-        hintPos = new PVector(g.width*widthFrac, size);
+        screens.push(new GameScreen(this));
     }
 
     public void draw() {
@@ -168,24 +88,8 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
         }
 
         background(255);
-        
-        PGraphics boardView = boardViewport.getGraphics();
-        boardView.beginDraw();
-        boardView.background(255);
-        boardView.fill(0);
-        boardView.lights();
-        boardView.smooth(4);
-
-        boardView.text(gameManager.getUIHint(), hintPos.x, hintPos.y);
-
-        quartoBoard.draw();
-        p1PieceOfferingHolder.draw();
-        p2PieceOfferingHolder.draw();
-        leftPieceBank.draw();
-        rightPieceBank.draw();
-        
-        boardView.endDraw();
-        image(boardView, boardViewport.getPosition().x, boardViewport.getPosition().y);
+        PGraphics graphics = screens.peek().display();
+        image(graphics, 0, 0);
     }
 
     public void scheduleJob(int millisUntilExecution, TimeKeeper.Job job) {
@@ -194,36 +98,38 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
 
     @Override
     public void setMinPriority(int priority) {
-        this.minPriority = priority;
+        this.minPriority.pop();
+        this.minPriority.push(priority);
     }
 
     @Override
     public void setMaxPriority(int priority) {
-        this.maxPriority = priority;
+        this.maxPriority.pop();
+        this.maxPriority.push(priority);
     }
 
     @Override
     public void add(MouseInteractable element) {
         if (element instanceof Draggable) {
             Draggable<?> d = (Draggable<?>) element;
-            if (!draggables.contains(d)) {
-                draggables.add(d);
-                draggables.sort(null);
+            if (!draggables.peek().contains(d)) {
+                draggables.peek().add(d);
+                draggables.peek().sort(null);
             }
         }
         if (element instanceof Clickable) {
             Clickable c = (Clickable) element;
-            if (!clickables.contains(c)) {
-                clickables.add(c);
-                clickables.sort(null);
+            if (!clickables.peek().contains(c)) {
+                clickables.peek().add(c);
+                clickables.peek().sort(null);
             }
         }
     }
 
     @Override
     public void remove(MouseInteractable element) {
-        if (element instanceof Draggable) draggables.remove((Draggable<?>) element);
-        if (element instanceof Clickable) clickables.remove((Clickable) element);
+        if (element instanceof Draggable) draggables.peek().remove((Draggable<?>) element);
+        if (element instanceof Clickable) clickables.peek().remove((Clickable) element);
     }
 
     @Override
@@ -246,30 +152,30 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
         return this.pmouseY;
     }
 
-    @Override
-    public void mouseWheel(MouseEvent e) {
-        super.mouseWheel(e);
-        quartoBoard.adjustDistance(e.getCount());
-    }
+    // @Override
+    // public void mouseWheel(MouseEvent e) {
+    //     super.mouseWheel(e);
+    //     quartoBoard.adjustDistance(e.getCount());
+    // }
 
     @Override
     public void mousePressed() {
         super.mousePressed();
         mouseMovedSinceClicked = false;
 
-        for (int i = clickables.size() - 1; i >= 0; i--) {
-            Clickable c = clickables.get(i);
-            if (c.priority() > maxPriority) continue;
-            if (c.priority() >= minPriority && c.mouseOver()) {
+        for (int i = clickables.peek().size() - 1; i >= 0; i--) {
+            Clickable c = clickables.peek().get(i);
+            if (c.priority() > maxPriority.peek()) continue;
+            if (c.priority() >= minPriority.peek() && c.mouseOver()) {
                 selectedClickable = c;
                 break;
             }
         }
 
-        for (int i = draggables.size() - 1; i >= 0; i--) {
-            Draggable<?> d = draggables.get(i);
-            if (d.priority() > maxPriority) continue;
-            if (d.priority() >= minPriority && d.mouseOver()) {
+        for (int i = draggables.peek().size() - 1; i >= 0; i--) {
+            Draggable<?> d = draggables.peek().get(i);
+            if (d.priority() > maxPriority.peek()) continue;
+            if (d.priority() >= minPriority.peek() && d.mouseOver()) {
                 selectedDraggable = d;
                 break;
             }
