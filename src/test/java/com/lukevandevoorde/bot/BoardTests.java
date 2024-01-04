@@ -189,17 +189,15 @@ public class BoardTests {
 
         board.move(p1, 0, 0);
         board.move(p2, 0, 1);
-        byte[] h1 = board.getHazards(0, 2);
         board.move(p3, 0, 2);
-        byte[] h2 = board.getHazards(0, 3);
         board.move(p4, 0, 3);
         
         assertEquals(12, board.remainingPieces().size());
-
+        assertEquals((byte)0b00000001, board.rowHazards[0]);
         byte[] hazards;
         int[] counts;
         // Undo 1
-        board.undo(0, 3, h2[0], h2[1], h2[2]);
+        board.undo();
         hazards = board.getHazards(0, 3);
         counts = board.getCounts(0, 3);
         assertEquals((byte)0b10000001, hazards[0]);
@@ -211,7 +209,7 @@ public class BoardTests {
         assertEquals(13, board.remainingPieces().size());
 
         // Undo 2
-        board.undo(0, 2, h1[0], h1[1], (byte)0);
+        board.undo();
         hazards = board.getHazards(0, 2);
         counts = board.getCounts(0, 2);
         assertEquals((byte)0b10100001, hazards[0]);
@@ -400,9 +398,7 @@ public class BoardTests {
 
         (board = new QB(board)).move(p1, 0, 0);
         (board = new QB(board)).move(p2, 0, 1);
-        byte[] h1 = (board = new QB(board)).getHazards(0, 2);
         (board = new QB(board)).move(p3, 0, 2);
-        byte[] h2 = (board = new QB(board)).getHazards(0, 3);
         (board = new QB(board)).move(p4, 0, 3);
         
         assertEquals(12, (board = new QB(board)).remainingPieces().size());
@@ -410,7 +406,7 @@ public class BoardTests {
         byte[] hazards;
         int[] counts;
         // Undo 1
-        (board = new QB(board)).undo(0, 3, h2[0], h2[1], h2[2]);
+        (board = new QB(board)).undo();
         hazards = (board = new QB(board)).getHazards(0, 3);
         counts = (board = new QB(board)).getCounts(0, 3);
         assertEquals((byte)0b10000001, hazards[0]);
@@ -422,7 +418,7 @@ public class BoardTests {
         assertEquals(13, (board = new QB(board)).remainingPieces().size());
 
         // Undo 2
-        (board = new QB(board)).undo(0, 2, h1[0], h1[1], (byte)0);
+        (board = new QB(board)).undo();
         hazards = (board = new QB(board)).getHazards(0, 2);
         counts = (board = new QB(board)).getCounts(0, 2);
         assertEquals((byte)0b10100001, hazards[0]);

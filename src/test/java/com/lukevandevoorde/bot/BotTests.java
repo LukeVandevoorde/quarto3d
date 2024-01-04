@@ -61,4 +61,33 @@ public class BotTests {
         assertEquals(true, (nextMove.row == 1 && nextMove.col == 1) || (nextMove.row == 2 && nextMove.col == 1));
     }
 
+    @Test
+    public void testSafePieceCount() {
+        QB board = new QB();
+        board.move(QuartoPiece.quartoPiece(true, false, false, false), 0, 0);
+        board.move(QuartoPiece.quartoPiece(true, true, false, false), 0, 1);
+        board.move(QuartoPiece.quartoPiece(true, true, true, true), 0, 2);
+
+        board.move(QuartoPiece.quartoPiece(false, true, false, false), 1, 1);
+        board.move(QuartoPiece.quartoPiece(false, true, true, false), 2, 2);
+
+        Bot bot = new Bot(1.5f);
+        assertEquals(4, bot.numberOfSafePieces(board));
+
+        board = new QB();
+        board.move(QuartoPiece.quartoPiece(true, false, false, false), 0, 0);
+        board.move(QuartoPiece.quartoPiece(true, true, false, false), 0, 1);
+        board.move(QuartoPiece.quartoPiece(true, true, true, true), 0, 2);
+
+        board.move(QuartoPiece.quartoPiece(false, true, false, false), 1, 1);
+        board.move(QuartoPiece.quartoPiece(false, false, false, true), 2, 2);
+        board.move(QuartoPiece.quartoPiece(false, true, true, false), 2, 0);
+
+        assertEquals(3, bot.numberOfSafePieces(board));
+
+        board = new QB();
+        board.move(QuartoPiece.quartoPiece(true, false, false, false), 0, 0);
+        assertEquals(0, bot.numberOfSafePieces(board));
+    }
+
 }

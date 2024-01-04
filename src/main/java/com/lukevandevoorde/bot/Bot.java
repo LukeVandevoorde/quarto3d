@@ -49,7 +49,7 @@ public class Bot {
                         }
                         
                         // Iterate over remaining pieces
-                        for (byte pieceToOffer: qb.remainingPieces) {
+                        for (byte pieceToOffer: new HashSet<Byte>(qb.remainingPieces)) {
                             score = alphabeta(false, qb, pieceToOffer, d-1, bestScore, Integer.MAX_VALUE);
                             if (score > bestScore) {
                                 bestScore = score;
@@ -145,33 +145,25 @@ public class Bot {
     private int alphabeta(boolean maximizing, QB board, byte pieceToPlace, int depth, int alpha, int beta) throws TimeoutException {
         if (System.nanoTime() - this.startTime >= this.timeLimit) throw new TimeoutException("Out of time");
         
-        byte prevEqDiagHazard = board.eqIdxDiagHazard;
-        byte prevCompDiagHazard = board.compIdxDiagHazard;
-        int prevEqDiagCount = board.eqIdxDiagCount;
-        int prevCompDiagCount = board.compIdxDiagCount;
         if (maximizing) {
-            if (depth <= 0) return heuristic2(board);
+            if (depth <= 0) {
+                int safe = numberOfSafePieces(board);
+                return safe * (((safe & 1) << 1) - 1);
+            }
             int bestScore = Integer.MIN_VALUE, score;
-            byte rowHazard, colHazard;
-            int rowCount, colCount;
+
             for (int row = -1; ++row < 4;) {
                 for (int col = -1; ++col < 4;) {
                     if (board.board[row][col] != 0) continue;
                     
-                    // qb = new QB(board);
-                    rowHazard = board.rowHazards[row];
-                    colHazard = board.colHazards[col];
-                    rowCount = board.rowCounts[row];
-                    colCount = board.colCounts[col];
-                    
                     // Perform move and check win
                     if (board.move(pieceToPlace, row, col)) {
-                        board.undo(row, col, rowHazard, rowCount, colHazard, colCount, prevEqDiagHazard, prevEqDiagCount, prevCompDiagHazard, prevCompDiagCount);
+                        board.undo();
                         return 10000 + depth;
                     }
                     // Tie
                     if (board.remainingPieces.size() == 0) {
-                        board.undo(row, col, rowHazard, rowCount, colHazard, colCount, prevEqDiagHazard, prevEqDiagCount, prevCompDiagHazard, prevCompDiagCount);
+                        board.undo();
                         return 0;
                     }
                     // Iterate over remaining pieces
@@ -179,40 +171,37 @@ public class Bot {
                         score = alphabeta(false, board, pieceToOffer, depth-1, alpha, beta);
 
                         if (score > beta) {
-                            board.undo(row, col, rowHazard, rowCount, colHazard, colCount, prevEqDiagHazard, prevEqDiagCount, prevCompDiagHazard, prevCompDiagCount);
+                            board.undo();
                             return score;
                         } else if (score > bestScore) bestScore = score;
 
                         alpha = Math.max(alpha, score);
                     }
                 
-                    board.undo(row, col, rowHazard, rowCount, colHazard, colCount, prevEqDiagHazard, prevEqDiagCount, prevCompDiagHazard, prevCompDiagCount);
+                    board.undo();
                 }
             }
 
             return bestScore;
         } else {
-            if (depth <= 0) return -heuristic2(board);
+            if (depth <= 0) {
+                int safe = numberOfSafePieces(board);
+                return safe * (1 - ((safe & 1) << 1));
+            }
             int worstScore = Integer.MAX_VALUE, score;
-            byte rowHazard, colHazard;
-            int rowCount, colCount;
+
             for (int row = -1; ++row < 4;) {
                 for (int col = -1; ++col < 4;) {
                     if (board.board[row][col] != 0) continue;
 
-                    rowHazard = board.rowHazards[row];
-                    colHazard = board.colHazards[col];
-                    rowCount = board.rowCounts[row];
-                    colCount = board.colCounts[col];
-
                     // Perform move and check win
                     if (board.move(pieceToPlace, row, col)) {
-                        board.undo(row, col, rowHazard, rowCount, colHazard, colCount, prevEqDiagHazard, prevEqDiagCount, prevCompDiagHazard, prevCompDiagCount);
+                        board.undo();
                         return -10000 - depth;
                     }
                         // Tie
                     if (board.remainingPieces.size() == 0) {
-                        board.undo(row, col, rowHazard, rowCount, colHazard, colCount, prevEqDiagHazard, prevEqDiagCount, prevCompDiagHazard, prevCompDiagCount);
+                        board.undo();
                         return 0;
                     }
                     // Iterate over remaining pieces
@@ -220,14 +209,14 @@ public class Bot {
                         score = alphabeta(true, board, pieceToOffer, depth-1, alpha, beta);
 
                         if (score < alpha) {
-                            board.undo(row, col, rowHazard, rowCount, colHazard, colCount, prevEqDiagHazard, prevEqDiagCount, prevCompDiagHazard, prevCompDiagCount);
+                            board.undo();
                             return score;
                         } else if (score < worstScore) worstScore = score;
                         
                         beta = Math.min(beta, score);
                     }
 
-                    board.undo(row, col, rowHazard, rowCount, colHazard, colCount, prevEqDiagHazard, prevEqDiagCount, prevCompDiagHazard, prevCompDiagCount);
+                    board.undo();
                 }
             }
 
@@ -235,7 +224,7 @@ public class Bot {
         }
     }
 
-    private int heuristic2(QB board) {
+    protected int numberOfSafePieces(QB board) {
         byte metaHazard = 0;
 
         for (int i = -1; ++i<4;) {
@@ -247,36 +236,37 @@ public class Bot {
                 metaHazard |= board.colHazards[i];
             }
         }
+        if (board.eqIdxDiagCount == 3) metaHazard |= board.eqIdxDiagHazard;
+        if (board.compIdxDiagCount == 3) metaHazard |= board.compIdxDiagHazard;
 
         final byte hazard = metaHazard;
 
-        int safe = (int) board.remainingPieces.stream().filter(p -> ((p & hazard) == 0)).count();
-        return safe * (((safe & 1) << 1) - 1);
+        return (int) board.remainingPieces.stream().filter(p -> ((p & hazard) == 0)).count();
     }
 
     // Count number of hazards that have an odd number of safe pieces remaining
     // Subtract number of hazards that have an even number of safe pieces remaining
-    private int heuristic(QB board) {
-        int result = 0;
+    // private int heuristic(QB board) {
+    //     int result = 0;
 
-        for (int i = -1; ++i<4;) {
-            int rowCount = countSafePieces(board, board.rowHazards[i]);
-            int colCount = countSafePieces(board, board.colHazards[i]);
+    //     for (int i = -1; ++i<4;) {
+    //         int rowCount = countSafePieces(board, board.rowHazards[i]);
+    //         int colCount = countSafePieces(board, board.colHazards[i]);
 
-            result += (((rowCount & 1) << 1) - 1) * board.rowCounts[i];
-            result += (((colCount & 1) << 1) - 1) * board.colCounts[i];
-        }
+    //         result += (((rowCount & 1) << 1) - 1) * board.rowCounts[i];
+    //         result += (((colCount & 1) << 1) - 1) * board.colCounts[i];
+    //     }
 
-        int eqDiagCount = countSafePieces(board, board.eqIdxDiagHazard);
-        int compDiagCount = countSafePieces(board, board.compIdxDiagHazard);
-        result += (((eqDiagCount & 1) << 1) - 1) * board.eqIdxDiagCount;
-        result += ((compDiagCount & 1) << 1) - 1 * board.compIdxDiagCount;
+    //     int eqDiagCount = countSafePieces(board, board.eqIdxDiagHazard);
+    //     int compDiagCount = countSafePieces(board, board.compIdxDiagHazard);
+    //     result += (((eqDiagCount & 1) << 1) - 1) * board.eqIdxDiagCount;
+    //     result += ((compDiagCount & 1) << 1) - 1 * board.compIdxDiagCount;
 
-        return result;
-    }
+    //     return result;
+    // }
 
-    private int countSafePieces(QB board, byte hazard) {
-        return (int) board.remainingPieces.stream().filter(p -> ((p & hazard) == 0)).count();
-    }
+    // private int countSafePieces(QB board, byte hazard) {
+    //     return (int) board.remainingPieces.stream().filter(p -> ((p & hazard) == 0)).count();
+    // }
 
 }
