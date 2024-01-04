@@ -92,21 +92,18 @@ public class QB {
     }
 
     // if not a diag, prevDiagHazard is disregarded
-    public void undo(int row, int col, byte prevRowHazard, byte prevColHazard, byte prevDiagHazard) {
+    public void undo(int row, int col, byte prevRowHazard, int prevRowCount, byte prevColHazard, int prevColCount, byte prevEqDiagHazard, int prevEqDiagCount, byte prevCompDiagHazard, int prevCompDiagCount) {
         remainingPieces.add(board[row][col]);
         board[row][col] = 0;
         rowHazards[row] = prevRowHazard;
-        rowCounts[row] -= 1;
+        rowCounts[row] = prevRowCount;
         colHazards[col] = prevColHazard;
-        colCounts[col] -= 1;
+        colCounts[col] = prevColCount;
         won = false;
-        if (row == col){
-            eqIdxDiagHazard = prevDiagHazard;
-            eqIdxDiagCount -= 1;
-        } else if (3 - row == col) {
-            compIdxDiagHazard = prevDiagHazard;
-            compIdxDiagCount -= 1;
-        }
+        eqIdxDiagHazard = prevEqDiagHazard;
+        eqIdxDiagCount = prevEqDiagCount;
+        compIdxDiagHazard = prevCompDiagHazard;
+        compIdxDiagCount = prevCompDiagCount;
     }
 
     public byte pieceAt(int row, int col) {

@@ -25,8 +25,7 @@ public class GameScreen extends Screen {
     private GameFlowManager gameManager;
 
     public GameScreen(PApplet app) {
-        int width = 1920, height=1080;
-        boardViewport = new Viewport(app.createGraphics(width, height, PApplet.P3D), new PVector(0, 0), 0.27f*PApplet.PI);
+        boardViewport = new Viewport(app.createGraphics(app.width, app.height, PApplet.P3D), new PVector(0, 0), 0.27f*PApplet.PI);
         userView = new TransformData(new PVector(boardViewport.width()/2, 3*boardViewport.height()/5, -boardViewport.height()/2), new PVector(-PApplet.THIRD_PI, 0, 0));
         selectView = new TransformData(new PVector(boardViewport.width()/2, boardViewport.height()/2, -boardViewport.height()/2), new PVector(0, 0, 0));
 

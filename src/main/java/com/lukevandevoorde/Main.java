@@ -73,8 +73,8 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
     }
 
     public void settings() {
-        // fullScreen(P3D);
-        size(1920, 1080, P3D);
+        fullScreen(P3D);
+        // size(1920, 1080, P3D);
         smooth(4);
     }
 
