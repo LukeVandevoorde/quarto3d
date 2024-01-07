@@ -96,7 +96,7 @@ public class GameScreen extends Screen {
         hintPos = new PVector(g.width*widthFrac, size);
     }
 
-    public PGraphics display() {
+    public void display(PApplet drawer) {
         PGraphics boardView = boardViewport.getGraphics();
         boardView.beginDraw();
         boardView.background(255);
@@ -113,7 +113,6 @@ public class GameScreen extends Screen {
         rightPieceBank.draw();
         
         boardView.endDraw();
-        return boardView;
-        // drawer.image(boardView, boardViewport.getPosition().x, boardViewport.getPosition().y);
+        drawer.image(boardView, boardViewport.getPosition().x, boardViewport.getPosition().y);
     }
 }

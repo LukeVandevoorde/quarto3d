@@ -1,7 +1,6 @@
 package com.lukevandevoorde;
 
 import processing.core.PApplet;
-import processing.core.PGraphics;
 
 import java.util.ArrayList;
 import java.util.PriorityQueue;
@@ -18,10 +17,10 @@ import com.lukevandevoorde.interfaces.TimeKeeper;
 public class Main extends PApplet implements UICoordinator, TimeKeeper {
 
     private class ComparableJob implements Comparable<ComparableJob> {
-        TimeKeeper.Job job;
+        Runnable job;
         int executionTime;
 
-        public ComparableJob(int executionTime, TimeKeeper.Job job) {
+        public ComparableJob(int executionTime, Runnable job) {
             this.job = job;
             this.executionTime = executionTime;
         }
@@ -84,15 +83,14 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
 
     public void draw() {
         while (!jobs.isEmpty() && jobs.peek().executionTime <= this.millis()) {
-            jobs.poll().job.execute();
+            jobs.poll().job.run();
         }
 
         background(255);
-        PGraphics graphics = screens.peek().display();
-        image(graphics, 0, 0);
+        screens.peek().display(this);
     }
 
-    public void scheduleJob(int millisUntilExecution, TimeKeeper.Job job) {
+    public void scheduleJob(int millisUntilExecution, Runnable job) {
         this.jobs.add(new ComparableJob(this.millis() + millisUntilExecution, job));
     }
 
@@ -194,8 +192,8 @@ public class Main extends PApplet implements UICoordinator, TimeKeeper {
             } else {
                 clickedAndWaitingForDoubleClick = true;
 
-                TimeKeeper.Job registerClick = new Job() {
-                    public void execute() {
+                Runnable registerClick = new Runnable() {
+                    public void run() {
                         if (clickedAndWaitingForDoubleClick) {
                             selectedClickable.onClick();
                             selectedClickable = null;

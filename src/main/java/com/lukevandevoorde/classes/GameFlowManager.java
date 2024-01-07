@@ -5,7 +5,6 @@ import java.util.Set;
 
 import com.lukevandevoorde.Board;
 import com.lukevandevoorde.Main;
-import com.lukevandevoorde.interfaces.TimeKeeper;
 import com.lukevandevoorde.quartolayer.QuartoBoardState;
 import com.lukevandevoorde.quartolayer.QuartoPiece;
 
@@ -119,8 +118,8 @@ public class GameFlowManager {
         int timeToPlacementAnimation = boardDrawable.enterSelectView(player.selectViewSpeed());
 
         GameFlowManager manager = this;
-        TimeKeeper.Job delayPlacementAnimation = new TimeKeeper.Job() {
-            public void execute() {
+        Runnable delayPlacementAnimation = new Runnable() {
+            public void run() {
                 PieceDraggable draggable = sourceHolder.getPieceDraggable();
                 sourceHolder.remove();
                 sourceHolder.hideRemovalIndicator(boardDrawable.handOff(draggable, row, col, player.dropSpeed()));
@@ -134,8 +133,8 @@ public class GameFlowManager {
                 } else {
                     turnState = selectState;
 
-                    TimeKeeper.Job delaySelection = new TimeKeeper.Job() {
-                        public void execute() {
+                    Runnable delaySelection = new Runnable() {
+                        public void run() {
                             destinationHolder.indicateDrop();
                             player.selectPieceToOffer(manager, quartoBoard);
                         }
@@ -183,8 +182,8 @@ public class GameFlowManager {
         int timeToPlacement = holder.handOff(drag, player.pieceOfferingSpeed());
 
         GameFlowManager manager = this;
-        TimeKeeper.Job delayPlacement = new TimeKeeper.Job() {
-            public void execute() {
+        Runnable delayPlacement = new Runnable() {
+            public void run() {
                 holder.switchIndication();
                 otherPlayer.choosePlacement(manager, quartoBoard, offering);
             }

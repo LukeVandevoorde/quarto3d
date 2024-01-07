@@ -1,9 +1,9 @@
 package com.lukevandevoorde.classes;
 
-import processing.core.PGraphics;
+import processing.core.PApplet;
 
 public abstract class Screen {
 
-    public abstract PGraphics display();
+    public abstract void display(PApplet drawer);
 
 }

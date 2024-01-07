@@ -1,7 +1,6 @@
 package com.lukevandevoorde.classes;
 
 import processing.core.PApplet;
-import processing.core.PGraphics;
 import processing.core.PVector;
 
 public class MenuScreen extends Screen {
@@ -14,7 +13,7 @@ public class MenuScreen extends Screen {
     }
 
     @Override
-    public PGraphics display() {
-        return viewport.getGraphics();
+    public void display(PApplet drawer) {
+        
     }
 }
